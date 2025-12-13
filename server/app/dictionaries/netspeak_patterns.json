@@ -1,0 +1,61 @@
+{
+    "filipino_netspeak": {
+        "acronyms": {
+            "ayt": "Are you there?",
+            "asap": "As soon as possible",
+            "bf": "Boyfriend",
+            "bff": "Best friends forever",
+            "brb": "Be right back",
+            "btw": "By the way",
+            "fyi": "For your information",
+            "g": "Go",
+            "gf": "Girlfriend",
+            "gg": "Good game",
+            "gtg": "Got to go",
+            "hbd": "Happy birthday",
+            "ikr": "I know, right?",
+            "imo": "In my opinion",
+            "irl": "In real life",
+            "j4f": "Just for fun",
+            "jk": "Just kidding",
+            "k": "Okay",
+            "lag": "Lag (slow internet)",
+            "lol": "Laughing out loud",
+            "nm": "Never mind",
+            "np": "No problem",
+            "nsfw": "Not safe for work",
+            "omg": "Oh my God",
+            "oot": "Out of town",
+            "pm": "Private message",
+            "rfs": "Reason for selling",
+            "tia": "Thanks in advance",
+            "tl;dr": "Too long; didn't read",
+            "ttyl": "Talk to you later",
+            "wtf": "What the f*ck",
+            "ykyat": "You know you want to"
+        },
+        "filipino_shortcuts": {
+            "ako": ["aq", "aqoh", "akoh", "aku", "ak0"],
+            "ikaw": ["u", "ikw"],
+            "siya": ["cya", "sia"],
+            "kami": ["kme", "km1"],
+            "tayo": ["tau", "tyo"],
+            "kayo": ["kyo", "kyu"],
+            "salamat": ["tnx", "slamat", "thnx", "ty"],
+            "mahal": ["mhl", "mhal"],
+            "kita": ["kta", "qta"],
+            "oo": ["ou", "00"],
+            "hindi": ["hnd", "ndi", "nde"],
+            "bakit": ["bkt", "bkit"],
+            "sige": ["ge", "sge", "cge"],
+            "kaibigan": ["fren", "brod"]
+        },
+        "common_phrases": {
+            "anong_chika": "What's the gossip?",
+            "nakakaloka": "It's making me crazy",
+            "sana_all": "I wish I had that too",
+            "sana_ol": "I wish I had that too",
+            "see_you_tom": "See you tomorrow"
+        }
+    }
+}

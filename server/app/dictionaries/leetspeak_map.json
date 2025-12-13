@@ -1,0 +1,35 @@
+{
+    "character_substitutions": {
+        "a": ["4", "@"],
+        "e": ["3", "€"],
+        "i": ["1", "!", "|"],
+        "o": ["0"],
+        "u": ["v"],
+        "s": ["5", "$", "z"],
+        "t": ["7"],
+        "b": ["8"],
+        "g": ["9", "6"],
+        "l": ["1"]
+    },
+    "filipino_leet_examples": {
+        "mahal_kita": ["m4h4l k1t4", "m@h@l k!t@", "mhl kta"],
+        "salamat": ["s4l4m4t", "s@l@m@t"],
+        "kaibigan": ["k41b1g4n", "k@!b!g@n"],
+        "maganda": ["m4g4nd4", "m@g@nd@", "mgnda"],
+        "pangit": ["p4ng1t", "p@ng!t", "pngt"],
+        "gutom": ["gvt0m", "gtom"],
+        "pagod": ["p4g0d", "p@g0d", "pgod"],
+        "tuwa": ["t4w4", "twa"]
+    },
+    "common_leet_words": {
+        "1337": "leet (elite)",
+        "4tw": "for the win",
+        "h4x0r": "hacker",
+        "n00b": "newbie",
+        "pwn3d": "owned",
+        "w00t": "expression of joy",
+        "ph33r": "fear",
+        "roxx0r": "rocks",
+        "sux0r": "sucks"
+    }
+}
