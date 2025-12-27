@@ -8,8 +8,7 @@
         "s": ["5", "$", "z"],
         "t": ["7"],
         "b": ["8"],
-        "g": ["9", "6"],
-        "l": ["1"]
+        "g": ["9", "6"]
     },
     "filipino_leet_examples": {
         "mahal_kita": ["m4h4l k1t4", "m@h@l k!t@", "mhl kta"],

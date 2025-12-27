@@ -14,9 +14,15 @@ except ImportError as e:
     print(f"Import error: {e}. Ensure you're running from the project root and __init__.py files exist.")
     sys.exit(1)
 
+
 if __name__ == '__main__':
     os.makedirs('server/app/dictionaries', exist_ok=True)
     load_and_cache_dictionaries()
+
+    #palazo-----------
+    for rule in app.url_map.iter_rules():
+        print(f"Endpoint: {rule.endpoint:20} URL: {rule.rule}")
+    #----------------
     
     for name, file_path in DICTIONARY_FILES.items():
         if not os.path.exists(file_path):

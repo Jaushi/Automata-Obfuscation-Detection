@@ -5,9 +5,9 @@ from ..models import NetspeakPatterns, LeetspeakMap, MorphologyPatterns
 logging.basicConfig(level=logging.INFO)
 
 DICTIONARY_FILES = {
-    'netspeak_patterns': 'server/app/dictionaries/netspeak_patterns.json',
-    'leetspeak_map': 'server/app/dictionaries/leetspeak_map.json',
-    'morphology_patterns': 'server/app/dictionaries/morphology_patterns.json'
+    'netspeak_patterns': 'app/dictionaries/netspeak_patterns.json',
+    'leetspeak_map': 'app/dictionaries/leetspeak_map.json',
+    'morphology_patterns': 'app/dictionaries/morphology_patterns.json'
 }
 
 cached_dictionaries = {} 
