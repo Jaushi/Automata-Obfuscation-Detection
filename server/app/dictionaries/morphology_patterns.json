@@ -1,0 +1,34 @@
+{
+    "filipino_text_patterns": {
+        "repetition_patterns": [
+            "hahaha",
+            "hehehe",
+            "huhuhu",
+            "lololol",
+            "omggg",
+            "ayieeee",
+            "grabehhh",
+            "charottt"
+        ],
+        "vowel_omission": {
+            "patterns": ["^[^aeiou]{3,}$", "[^aeiou]{4,}"],
+            "examples": ["slmt", "mhl", "hnd", "bkt", "cge", "kyo"]
+        },
+        "character_replacement": {
+            "c_to_k": ["cge", "kita", "kain", "kwarto"],
+            "ph_to_f": ["filipino", "phone", "photo"],
+            "common_misspellings": ["chaka", "chos", "charot", "sheket"]
+        },
+        "texting_shortcuts": {
+            "shortened_words": ["pre", "tol", "pare", "dude", "bro"],
+            "letter_number_mix": ["4ever", "2moro", "b4", "gr8", "l8r"],
+            "sound_alike": ["u", "r", "y", "c", "b"]
+        }
+    },
+    "online_communication_features": {
+        "exclamation_multipliers": ["!!", "!!!", "!!!!"],
+        "question_multipliers": ["??", "???", "????"],
+        "elongated_words": ["helloooo", "hiiiii", "byeeee", "okaaaay"],
+        "emoticon_patterns": [":)", ":(", ":D", ":'(", ":'D", ">:(", ":'3"]
+    }
+}
