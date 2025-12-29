@@ -1,6 +1,6 @@
 import pytest
-from server.app import app  
-from server.app.models import NetspeakPatterns 
+from app import app
+from app.models import NetspeakPatterns
 
 @pytest.fixture
 def client():
