@@ -12,7 +12,7 @@
         ],
         "vowel_omission": {
             "patterns": ["^[^aeiou]{3,}$", "[^aeiou]{4,}"],
-            "examples": ["slmt", "mhl", "hnd", "bkt", "cge", "kyo"]
+            "examples": ["slmt", "mhl", "hnd", "bkt", "cge", "kyo", "trbho", "gnp", "wrk", "wrkfrmbm", "wrkfrmhm", "sn", "skl", "skwel", "cncrn"]
         },
         "character_replacement": {
             "c_to_k": ["cge", "kita", "kain", "kwarto"],
@@ -23,12 +23,91 @@
             "shortened_words": ["pre", "tol", "pare", "dude", "bro"],
             "letter_number_mix": ["4ever", "2moro", "b4", "gr8", "l8r"],
             "sound_alike": ["u", "r", "y", "c", "b"]
-        }
+        },
+        "taglish_fillers": [
+            "ano ba",
+            "ewan ko",
+            "as in",
+            "like",
+            "yung",
+            "yun nga",
+            "di ba",
+            "diba",
+            "kasi",
+            "parang",
+            "legit",
+            "sure ka",
+            "promise"
+        ],
+        "taglish_shortcuts": [
+            "wer u",
+            "san ka",
+            "kita kits",
+            "c u",
+            "c u l8r",
+            "see u",
+            "tbh",
+            "ikr",
+            "idk",
+            "btw",
+            "omg",
+            "lol",
+            "lmao"
+        ],
+        "mix_code_verbs": [
+            "magchill",
+            "magstudy",
+            "magwork",
+            "magdrive",
+            "magshopping",
+            "magstop",
+            "magcancel",
+            "magreply",
+            "magchat",
+            "magmeet",
+            "magorder",
+            "nagwork",
+            "nagdrive",
+            "nagreply",
+            "nagchat",
+            "nagmeet"
+        ],
+        "intensity_taglish": [
+            "sooooobrang",
+            "grabehhh",
+            "sobraaaa",
+            "sobraaaah",
+            "legiiit",
+            "legiiiiit",
+            "cutieee",
+            "swabee",
+            "swerteee"
+        ],
+        "consonant_swaps_phonetic": [
+            "tsillax",
+            "chillax",
+            "chz",
+            "joa",
+            "jowa",
+            "jowah"
+        ]
     },
     "online_communication_features": {
         "exclamation_multipliers": ["!!", "!!!", "!!!!"],
         "question_multipliers": ["??", "???", "????"],
         "elongated_words": ["helloooo", "hiiiii", "byeeee", "okaaaay"],
-        "emoticon_patterns": [":)", ":(", ":D", ":'(", ":'D", ">:(", ":'3"]
+        "emoticon_patterns": [":)", ":(", ":D", ":'(", ":'D", ">:(", ":'3", "^^", ">:)", "xD", ":P", ";)", ":O", ":|", ">:O", "^_^", "-_-"]
+    },
+    "taglish_common": {
+        "jowa": ["joa", "jowah", "jowaa"],
+        "tropa": ["tropz", "trops"],
+        "petmalu": ["petma", "petmal"],
+        "lodi": ["lods", "lodicakes"],
+        "werpa": ["werpz"],
+        "astig": ["ast3g", "ast1g"],
+        "charot": ["char", "charrr"],
+        "chika": ["chikahan", "chikahan muna"],
+        "g": ["game", "gow"],
+        "omg": ["omaygad", "omayghad"]
     }
 }
