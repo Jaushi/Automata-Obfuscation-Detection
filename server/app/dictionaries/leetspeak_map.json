@@ -12,13 +12,27 @@
     },
     "filipino_leet_examples": {
         "mahal_kita": ["m4h4l k1t4", "m@h@l k!t@", "mhl kta"],
+        "mahal": ["m4h4l", "m@h@l", "mhl"],
+        "kita": ["k1t4", "kta", "k!t4"],
+        "ako": ["ak0", "aq", "akoh"],
+        "ikaw": ["1k4w", "ikw", "u"],
         "salamat": ["s4l4m4t", "s@l@m@t"],
         "kaibigan": ["k41b1g4n", "k@!b!g@n"],
         "maganda": ["m4g4nd4", "m@g@nd@", "mgnda"],
         "pangit": ["p4ng1t", "p@ng!t", "pngt"],
         "gutom": ["gvt0m", "gtom"],
         "pagod": ["p4g0d", "p@g0d", "pgod"],
-        "tuwa": ["t4w4", "twa"]
+        "tuwa": ["t4w4", "twa"],
+        "kumusta": ["kvmvst4", "kmvsta", "kmusta", "kums7@", "kmu574", "kmzt@"],
+        "anong ganap": ["4n0ng g4n4p", "an0ng g@nap", "4n0ng g@nap", "anong g4n4p", "an0 gnp", "4n0 gnp"],
+        "wala lang": ["w4l4 l4ng", "wal4 lang", "w4l4 lang", "wla lng", "w@l@ l@ng", "w@la lang", "wl lng"],
+        "bahala ka": ["b4h4l4 k4", "b@h@l@ k@", "bhala ka", "b4h4l4 ka", "b@h@l@ ka", "bhl k"],
+        "inggit ako": ["1ngg1t 4k0", "1ngg!t ak0", "inggit aq", "inggit akoh", "1ngg1t aq"],
+        "swerte mo": ["5w3rt3 m0", "5w3rt3 mo", "swerte m0", "swrt m0", "swrt mo", "swer73 m0"],
+        "crush kita": ["cru5h k1t4", "cru5h kta", "crush kta", "cru5h k!t4"],
+        "galing mo": ["94l1ng m0", "g4l1ng m0", "glyn m0"],
+        "ingat lagi": ["1ng4t l49i", "ingat l4g1", "ng4t lggy"],
+        "tara na": ["74r4 n4", "t@r@ n@", "tr4 n4", "t@ra n@", "tr4 na" ]
     },
     "common_leet_words": {
         "1337": "leet (elite)",
