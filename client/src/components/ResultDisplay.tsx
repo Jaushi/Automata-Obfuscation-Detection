@@ -1,3 +1,9 @@
+interface FuzzyMatch {
+  original: string;
+  match: string;
+  score: number;
+}
+
 interface ResultDisplayProps {
   result: {
     original_text: string;
@@ -5,6 +11,8 @@ interface ResultDisplayProps {
     obfuscation_percentage: number;
     deciphered_text?: string;
     character_count: number;
+    fuzzy_matches?: FuzzyMatch[];
+    confidence?: number;
   };
 }
 
@@ -56,6 +64,43 @@ export default function ResultDisplay({ result }: ResultDisplayProps) {
             <label className="block text-sm font-semibold text-gray-600 mb-2">Deciphered Text</label>
             <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
               <p className="text-lg text-indigo-900 font-mono break-words">{result.deciphered_text}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Fuzzy Matches */}
+        {result.fuzzy_matches && result.fuzzy_matches.length > 0 && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-600 mb-2">
+              Detected Obfuscations ({result.fuzzy_matches.length} found)
+            </label>
+            <div className="space-y-2">
+              {result.fuzzy_matches.map((match, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 bg-red-100 text-red-800 font-mono rounded">
+                      {match.original}
+                    </span>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    <span className="px-3 py-1 bg-green-100 text-green-800 font-mono rounded">
+                      {match.match}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-purple-700">
+                      {match.score.toFixed(1)}%
+                    </div>
+                    <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-purple-500 rounded-full transition-all"
+                        style={{ width: `${match.score}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
