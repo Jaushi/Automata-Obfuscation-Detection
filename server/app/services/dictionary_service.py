@@ -3,7 +3,7 @@ import logging
 import urllib.request
 from typing import Set
 from ..models import NetspeakPatterns, LeetspeakMap, MorphologyPatterns  
-
+import os
 logging.basicConfig(level=logging.INFO)
 
 DICTIONARY_FILES = {
@@ -11,8 +11,6 @@ DICTIONARY_FILES = {
     'leetspeak_map': 'app/dictionaries/leetspeak_map.json',
     'morphology_patterns': 'app/dictionaries/morphology_patterns.json'
 }
-
-TAGALOG_DICTIONARY_URL = "https://raymelon.github.io/tagalog-dictionary-scraper/tagalog_dict.json"
 
 cached_dictionaries = {} 
 filipino_word_set: Set[str] = set()
@@ -47,26 +45,42 @@ def load_dictionary(file_path):
         return {"error": str(e)}
 
 def load_filipino_dictionary():
-    """Load Tagalog dictionary from remote URL (GitHub Pages API) for fuzzy matching"""
     global filipino_word_set
     try:
-        with urllib.request.urlopen(TAGALOG_DICTIONARY_URL, timeout=10) as response:
-            data = json.loads(response.read().decode('utf-8'))
-            
-            # Data is a simple array of words (strings)
-            words = set()
-            for word in data:
-                if isinstance(word, str):
-                    word_clean = word.lower().strip()
-                    # Remove punctuation, keep only alphanumeric
-                    word_clean = ''.join(c for c in word_clean if c.isalnum())
-                    if word_clean and len(word_clean) >= 2:  # Only words with 2+ chars
-                        words.add(word_clean)
-            
-            filipino_word_set = words
-            logging.info(f"Loaded {len(filipino_word_set)} Tagalog words from dictionary")
+        base_dir = os.path.dirname(__file__)
+        dict_path = os.path.abspath(
+            os.path.join(base_dir, '..', 'dictionaries', 'tagalog_dict.json')
+        )
+
+        with open(dict_path, encoding='utf-8') as f:
+            data = json.load(f)
+
+        words = set()
+
+        def extract(obj):
+            if isinstance(obj, str):
+                w = ''.join(c for c in obj.lower() if c.isalnum())
+                if len(w) >= 2:
+                    words.add(w)
+
+            elif isinstance(obj, dict):
+                if "word" in obj:
+                    extract(obj["word"])
+                else:
+                    for v in obj.values():
+                        extract(v)
+
+            elif isinstance(obj, list):
+                for item in obj:
+                    extract(item)
+
+        extract(data)
+
+        filipino_word_set = words
+        logging.info(f"Loaded {len(filipino_word_set)} Tagalog words (LOCAL)")
+
     except Exception as e:
-        logging.warning(f"Failed to load Tagalog dictionary from URL: {e}")
+        logging.error(f"Failed to load local Tagalog dictionary: {e}")
         filipino_word_set = set()
 
 def get_filipino_words() -> Set[str]:

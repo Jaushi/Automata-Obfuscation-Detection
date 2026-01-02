@@ -1,51 +1,47 @@
 {
-  "prefixes": {
-    "mag": "^mag[a-z]+$",
-    "nag": "^nag[a-z]+$",
-    "pag": "^pag[a-z]+$",
-    "grabe": "^gra+be+h*[a-z]*$",
-    "sobrang": "^sobra+ng[a-z]+$"
+  "affixes": {
+    "prefixes": {
+      "mag": "actor focus verbal prefix (magbasa, magluto)",
+      "nag": "completed aspect of mag- (nagluto, nagbasa)",
+      "pag": "imperative/nominal prefix (pagluto, pagbasa)",
+      "pang": "tool/instrument prefix (pangsulat, pambili)",
+      "ma": "adjective/stative prefix (maganda, masaya)",
+      "mang": "actor focus with assimilation (mambili, manghuli)",
+      "ka": "abstract noun prefix (kaibigan, kasama)",
+      "pagka": "state/quality prefix (pagkamatay, pagkaganda)",
+      "um": "actor focus infix (s-um-ulat, k-um-ain)",
+      "in": "object focus infix/suffix (k-in-ain, bilhin)"
+    },
+    "suffixes": {
+      "an": "locative/benefactive focus (kainan, basahan)",
+      "han": "variant of -an after 'i' (bilihan, sulihan)",
+      "in": "object focus (kainin, basahin)",
+      "hin": "variant of -in after 'i' (bilhin)"
+    },
+    "infixes": {
+      "um": "actor focus, inserted after first consonant (sulat→sumulat)",
+      "in": "completed aspect, inserted after first consonant (sulat→sinulat)"
+    }
   },
 
-  "suffixes": {
-    "ko": "[a-z]+ko$",
-    "mo": "[a-z]+mo$",
-    "niya": "[a-z]+niya$",
-    "natin": "[a-z]+natin$",
-    "ninyo": "[a-z]+ninyo$",
-    "nila": "[a-z]+nila$",
-    "na": "[a-z]+na$",
-    "pa": "[a-z]+pa$",
-    "man": "[a-z]+man$",
-    "an": "[a-z]+an$",
-    "in": "[a-z]+in$"
+  "obfuscation_patterns": {
+    "lengthening": {
+      "vowel_lengthening": "[aeiou]{2,}",
+      "consonant_lengthening": "([bcdfghjklmnpqrstvwxyz])\\\\1{1,}"
+    },
+    "reduplication": {
+      "full_reduplication": "^([a-z]{2,})\\\\1+$",
+      "cv_reduplication": "^([bcdfghjklmnpqrstvwxyz][aeiou])\\\\1[a-z]*$"
+    },
+    "vowel_omission": {
+      "consonant_cluster": "[bcdfghjklmnpqrstvwxyz]{3,}",
+      "all_consonants": "^[bcdfghjklmnpqrstvwxyz]{2,}$"
+    }
   },
 
-  "lengthening": {
-    "vowel_lengthening": "[aeiou]{2,}",
-    "consonant_lengthening": "([bcdfghjklmnpqrstvwxyz])\\1{1,}"
-  },
-
-  "reduplication": {
-    "full_reduplication": "^([a-z]+)\\1+$",
-    "partial_reduplication": "^([bcdfghjklmnpqrstvwxyz][aeiou])\\1[a-z]*$"
-  },
-
-  "deletion_patterns": {
-    "vowel_deleted": "^[^aeiou]+$",
-    "compressed_vowels": "^[a-z]*[aeiou][^aeiou]+$"
-  },
-
-  "substitution_patterns": {
-    "phonetic_variants": [
-      "ph", "f",
-      "c", "k",
-      "ch", "ts",
-      "th", "t"
-    ]
-  },
-
-  "coverage_assumption": {
-    "note": "Patterns apply to any alphabetic token for obfuscation detection"
+  "validation_rules": {
+    "min_word_length": 2,
+    "min_root_after_prefix": 2,
+    "min_root_before_suffix": 2
   }
 }
