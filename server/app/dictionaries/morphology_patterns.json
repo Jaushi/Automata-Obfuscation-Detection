@@ -1,34 +1,51 @@
 {
-    "filipino_text_patterns": {
-        "repetition_patterns": [
-            "hahaha",
-            "hehehe",
-            "huhuhu",
-            "lololol",
-            "omggg",
-            "ayieeee",
-            "grabehhh",
-            "charottt"
-        ],
-        "vowel_omission": {
-            "patterns": ["^[^aeiou]{3,}$", "[^aeiou]{4,}"],
-            "examples": ["slmt", "mhl", "hnd", "bkt", "cge", "kyo"]
-        },
-        "character_replacement": {
-            "c_to_k": ["cge", "kita", "kain", "kwarto"],
-            "ph_to_f": ["filipino", "phone", "photo"],
-            "common_misspellings": ["chaka", "chos", "charot", "sheket"]
-        },
-        "texting_shortcuts": {
-            "shortened_words": ["pre", "tol", "pare", "dude", "bro"],
-            "letter_number_mix": ["4ever", "2moro", "b4", "gr8", "l8r"],
-            "sound_alike": ["u", "r", "y", "c", "b"]
-        }
-    },
-    "online_communication_features": {
-        "exclamation_multipliers": ["!!", "!!!", "!!!!"],
-        "question_multipliers": ["??", "???", "????"],
-        "elongated_words": ["helloooo", "hiiiii", "byeeee", "okaaaay"],
-        "emoticon_patterns": [":)", ":(", ":D", ":'(", ":'D", ">:(", ":'3"]
-    }
+  "prefixes": {
+    "mag": "^mag[a-z]+$",
+    "nag": "^nag[a-z]+$",
+    "pag": "^pag[a-z]+$",
+    "grabe": "^gra+be+h*[a-z]*$",
+    "sobrang": "^sobra+ng[a-z]+$"
+  },
+
+  "suffixes": {
+    "ko": "[a-z]+ko$",
+    "mo": "[a-z]+mo$",
+    "niya": "[a-z]+niya$",
+    "natin": "[a-z]+natin$",
+    "ninyo": "[a-z]+ninyo$",
+    "nila": "[a-z]+nila$",
+    "na": "[a-z]+na$",
+    "pa": "[a-z]+pa$",
+    "man": "[a-z]+man$",
+    "an": "[a-z]+an$",
+    "in": "[a-z]+in$"
+  },
+
+  "lengthening": {
+    "vowel_lengthening": "[aeiou]{2,}",
+    "consonant_lengthening": "([bcdfghjklmnpqrstvwxyz])\\1{1,}"
+  },
+
+  "reduplication": {
+    "full_reduplication": "^([a-z]+)\\1+$",
+    "partial_reduplication": "^([bcdfghjklmnpqrstvwxyz][aeiou])\\1[a-z]*$"
+  },
+
+  "deletion_patterns": {
+    "vowel_deleted": "^[^aeiou]+$",
+    "compressed_vowels": "^[a-z]*[aeiou][^aeiou]+$"
+  },
+
+  "substitution_patterns": {
+    "phonetic_variants": [
+      "ph", "f",
+      "c", "k",
+      "ch", "ts",
+      "th", "t"
+    ]
+  },
+
+  "coverage_assumption": {
+    "note": "Patterns apply to any alphabetic token for obfuscation detection"
+  }
 }

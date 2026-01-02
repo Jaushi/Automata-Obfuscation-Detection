@@ -1,5 +1,7 @@
 import json
 import logging
+import urllib.request
+from typing import Set
 from ..models import NetspeakPatterns, LeetspeakMap, MorphologyPatterns  
 
 logging.basicConfig(level=logging.INFO)
@@ -10,7 +12,10 @@ DICTIONARY_FILES = {
     'morphology_patterns': 'app/dictionaries/morphology_patterns.json'
 }
 
+TAGALOG_DICTIONARY_URL = "https://raymelon.github.io/tagalog-dictionary-scraper/tagalog_dict.json"
+
 cached_dictionaries = {} 
+filipino_word_set: Set[str] = set()
 
 def load_and_cache_dictionaries():
     model_classes = {
@@ -26,6 +31,9 @@ def load_and_cache_dictionaries():
             cached_dictionaries[name] = model_class(name=name, error=data["error"])
         else:
             cached_dictionaries[name] = model_class(name=name, data=data)
+    
+    # Load Filipino dictionary from URL
+    load_filipino_dictionary()
 
 def load_dictionary(file_path):
     try:
@@ -37,3 +45,30 @@ def load_dictionary(file_path):
         return {"error": f"Invalid JSON in file: {file_path}"}
     except Exception as e:
         return {"error": str(e)}
+
+def load_filipino_dictionary():
+    """Load Tagalog dictionary from remote URL (GitHub Pages API) for fuzzy matching"""
+    global filipino_word_set
+    try:
+        with urllib.request.urlopen(TAGALOG_DICTIONARY_URL, timeout=10) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            
+            # Data is a simple array of words (strings)
+            words = set()
+            for word in data:
+                if isinstance(word, str):
+                    word_clean = word.lower().strip()
+                    # Remove punctuation, keep only alphanumeric
+                    word_clean = ''.join(c for c in word_clean if c.isalnum())
+                    if word_clean and len(word_clean) >= 2:  # Only words with 2+ chars
+                        words.add(word_clean)
+            
+            filipino_word_set = words
+            logging.info(f"Loaded {len(filipino_word_set)} Tagalog words from dictionary")
+    except Exception as e:
+        logging.warning(f"Failed to load Tagalog dictionary from URL: {e}")
+        filipino_word_set = set()
+
+def get_filipino_words() -> Set[str]:
+    """Get the set of Tagalog/Filipino words for fuzzy matching"""
+    return filipino_word_set
