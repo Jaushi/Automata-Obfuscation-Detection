@@ -45,19 +45,16 @@
             "kami": ["kme", "km1"],
             "tayo": ["tau", "tyo"],
             "kayo": ["kyo", "kyu"],
-<<<<<<< HEAD
             "crush": ["crushie", "crushiecake"],
-=======
-            "mga": ["mg4", "mg@", "mgA"],
-            "kababayan": ["ka5a5ayan", "kab@b@yan", "k4b4b4y4n"],
->>>>>>> feature/BE-fuzzy-matching
             "salamat": ["tnx", "slamat", "thnx", "ty"],
             "mahal": ["mhl", "mhal"],
             "kita": ["kta", "qta", "k1t4", "k!t4"],
             "kasi": ["kac"],
             "sana": ["sna", "sana", "sana_all", "sanaall"],
             "tulog": ["2log", "tul0g", "2lg"],
+            "tulog": ["2log", "tul0g", "2lg"],
             "opo": ["opo", "0po"],
+            "po": ["p0", "po", "p0h", "poh"],
             "po": ["p0", "po", "p0h", "poh"],
             "ko": ["q", "k0"],
             "oo": ["ou", "00"],
@@ -77,7 +74,6 @@
             "see_you_tom": "See you tomorrow"
         },
         "common_slang": {
-<<<<<<< HEAD
             "mismo": ["omcm", "omsim"],
             "mare": ["marecakes"],
             "idol": ["lods", "lodi", "lodicakes"],
@@ -125,53 +121,6 @@
             "tito": ["angkul", "ankol"],
             "pare": ["par"],
             "go": ["gooo"]
-=======
-            "omcm": "mismo",
-            "omsim": "mismo",
-            "marecakes": "mare",
-            "lods": "idol",
-            "lodi": "idol",
-            "ssob": "boss",
-            "awit": "aw, sakit",
-            "gege": "sige",
-            "naur": "no",
-            "dasurb": "deserve",
-            "dasurv": "deserve",
-            "dogshow": "biro",
-            "pi": "po",
-            "yarn": "iyan",
-            "inch": "interchange",
-            "maritess": "tsismosa",
-            "anyare": "anong nangyari",
-            "alam na this": "alam na ito",
-            "ganern": "ganoon",
-            "korique": "tama",
-            "pa-mine": "akin na",
-            "budol": "panloloko",
-            "yorme": "mayor",
-            "eguls": "lugi",
-            "apakaganda": "napakaganda",
-            "apakasarap": "napakasarap",
-            "apakamahal": "napakamahal",
-            "pusuan mo": "pusuan",
-            "matsala": "salamat",
-            "bet": "gusto",
-            "walwal": "lasing",
-            "skl": "share ko lang",
-            "afam": "foreigner",
-            "mekus-mekus": "halo-halo",
-            "char": "biro lang",
-            "charot": "biro lang",
-            "naol": "sana lahat",
-            "sana all": "sana lahat",
-            "petmalu": "malupit",
-            "werpa": "power",
-            "beshie": "kaibigan",
-            "jowa": "kasintahan",
-            "kilig": "kinikilig",
-            "chika": "kuwento",
-            "mumshie": "nanay"
->>>>>>> feature/BE-fuzzy-matching
         }
     }
 }

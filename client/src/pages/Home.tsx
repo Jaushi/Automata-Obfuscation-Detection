@@ -1,25 +1,14 @@
 import { useState } from 'react';
 import TextInput from '../components/TextInput';
-import LanguageChart from '../components/LanguageChart';
 import ResultDisplay from '../components/ResultDisplay';
-import { detectWithFuzzy } from '../utils/api';
-import type { FuzzyAnalysisResult } from '../types';
+import { analyzeText } from '../utils/api';
 
 interface AnalysisResult {
   original_text: string;
   detected_obfuscation: boolean;
   obfuscation_percentage: number;
   deciphered_text?: string;
-  language_distribution: {
-    tagalog: number;
-    english: number;
-  };
   character_count: number;
-  fuzzy_matches?: Array<{
-    original: string;
-    match: string;
-    score: number;
-  }>;
   confidence?: number;
 }
 
@@ -31,28 +20,24 @@ function Home() {
   const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
+    if (!text.trim()) {
+      setError('Please enter some text to analyze');
+      return;
+    }
+
     setIsAnalyzing(true);
     setError(null);
     
     try {
-      const fuzzyResult = await detectWithFuzzy(text, 75);
+      const analysisResult = await analyzeText(text);
       
-      // Transform fuzzy detection result to AnalysisResult format
-      const analysisResult: AnalysisResult = {
-        original_text: fuzzyResult.original_text,
-        detected_obfuscation: fuzzyResult.is_obfuscated,
-        obfuscation_percentage: fuzzyResult.confidence,
-        deciphered_text: fuzzyResult.deobfuscated,
-        language_distribution: {
-          tagalog: 0.5,
-          english: 0.5,
-        },
-        character_count: fuzzyResult.original_text.length,
-        fuzzy_matches: fuzzyResult.fuzzy_matches,
-        confidence: fuzzyResult.confidence,
-      };
-      
-      setResult(analysisResult);
+      setResult({
+        original_text: analysisResult.original_text,
+        detected_obfuscation: analysisResult.detected_obfuscation,
+        obfuscation_percentage: analysisResult.obfuscation_percentage,
+        deciphered_text: analysisResult.deciphered_text,
+        character_count: analysisResult.character_count,
+      });
     } catch (err) {
       setError('Failed to analyze text. Please try again.');
       console.error(err);
@@ -76,7 +61,7 @@ function Home() {
             Taglish Obfuscation Detector
           </h1>
           <p className="text-lg text-gray-600">
-            Finite Automata-based Detection & Translation System
+            Finite Automata-based Detection & Deobfuscation System
           </p>
         </div>
 
@@ -126,10 +111,7 @@ function Home() {
             </div>
 
             {result && (
-              <>
-                <LanguageChart distribution={result.language_distribution} />
-                <ResultDisplay result={result} />
-              </>
+              <ResultDisplay result={result} />
             )}
           </div>
         ) : (
@@ -150,19 +132,22 @@ function Home() {
               <ul className="list-disc list-inside space-y-2 mb-4">
                 <li>Real-time obfuscation detection using pattern recognition</li>
                 <li>Automatic deciphering of leetspeak and character substitutions</li>
-                <li>Language distribution analysis (Tagalog vs English)</li>
+                <li>Duplication normalization (heeeey → hey)</li>
                 <li>Character-level finite automata processing</li>
+                <li>Fuzzy matching for intelligent word correction</li>
                 <li>Support for common obfuscation patterns (3→e, 1→i, 0→o, etc.)</li>
               </ul>
 
               <h3 className="text-2xl font-semibold text-indigo-800 mt-6 mb-3">
-                Future Development
+                How It Works
               </h3>
-              <p className="mb-4">
-                This system will be developed into an OS-level overlay that continuously monitors 
-                text input and automatically detects and deciphers obfuscated words in real-time, 
-                providing seamless translation assistance across all applications.
-              </p>
+              <ol className="list-decimal list-inside space-y-2 mb-4">
+                <li><strong>Detection:</strong> Identifies 5 types of obfuscation patterns using NFAs</li>
+                <li><strong>Transformation:</strong> Reverses leetspeak and normalizes character duplication</li>
+                <li><strong>Dictionary Lookup:</strong> Checks against netspeak dictionary</li>
+                <li><strong>Fuzzy Matching:</strong> Finds closest valid word for unrecognized tokens</li>
+                <li><strong>Output:</strong> Returns original and deobfuscated text with confidence</li>
+              </ol>
 
               <h3 className="text-2xl font-semibold text-indigo-800 mt-6 mb-3">
                 Technology Stack
@@ -171,6 +156,7 @@ function Home() {
                 <li><strong>Frontend:</strong> React + TypeScript + Vite + TailwindCSS</li>
                 <li><strong>Backend:</strong> Python Flask with finite automata implementation</li>
                 <li><strong>Theory:</strong> Finite State Machines & Pattern Matching</li>
+                <li><strong>NLP:</strong> Fuzzy string matching with RapidFuzz</li>
               </ul>
             </div>
           </div>

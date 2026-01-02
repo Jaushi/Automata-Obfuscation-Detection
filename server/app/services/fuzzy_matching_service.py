@@ -25,26 +25,26 @@ class FuzzyMatcher:
                 adjusted_score -= penalty
             
             # Strong bonus for longer words (prefer complete words)
-            # This helps "hello" beat "hell" and "mga" beat "mg"
             if len(match) >= 4:
-                length_bonus = (len(match) - 3) * 4  # 4% per character after 3
+                length_bonus = (len(match) - 3) * 4
                 adjusted_score += length_bonus
             
-            # Bonus if the beginning matches well (important for short words)
+            # Bonus if the beginning matches well
             if len(word) >= 3 and len(match) >= 3:
                 prefix_match = sum(1 for a, b in zip(word[:3].lower(), match[:3].lower()) if a == b)
                 adjusted_score += prefix_match * 3
             
-            # Exact length match bonus (same length as input = likely correct)
+            # Exact length match bonus
             if len(match) == len(word):
                 adjusted_score += 2
             
-            # Lower threshold for very short words (3 chars or less)
+            # STRICT threshold - don't lower for short words
+            # Short words need HIGHER confidence, not lower
             effective_threshold = self.threshold
-            if len(word) <= 3:
-                effective_threshold = max(60, self.threshold - 15)
+            if len(word) <= 4:
+                effective_threshold = max(90, self.threshold)  # Minimum 90% for short words
             
-            adjusted_score = min(100, max(0, adjusted_score))  # Keep in 0-100 range
+            adjusted_score = min(100, max(0, adjusted_score))
             
             if adjusted_score >= effective_threshold:
                 results.append({
@@ -53,7 +53,6 @@ class FuzzyMatcher:
                     'confidence': adjusted_score / 100
                 })
         
-        # Sort by adjusted score, then by word frequency (common words), then by length
         results.sort(key=lambda x: (x['score'], len(x['word'])), reverse=True)
         return results[:limit]
 

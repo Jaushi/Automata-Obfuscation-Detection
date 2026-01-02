@@ -1,0 +1,41 @@
+{
+    "description": "Common English words that should be protected from deobfuscation",
+    "version": "1.0.0",
+    "categories": {
+      "function_words": {
+        "articles": ["a", "an", "the"],
+        "pronouns": ["i", "you", "he", "she", "it", "we", "they", "me", "him", "her", "us", "them", "my", "your", "his", "its", "our", "their", "mine", "yours", "hers", "ours", "theirs", "this", "that", "these", "those", "who", "whom", "whose", "which", "what"],
+        "prepositions": ["of", "in", "to", "for", "with", "on", "at", "from", "by", "about", "as", "into", "like", "through", "after", "over", "between", "out", "against", "during", "without", "before", "under", "around", "among"],
+        "conjunctions": ["and", "but", "or", "nor", "so", "yet", "for", "because", "since", "unless", "while", "where", "after", "though", "although", "if", "than", "when", "whether", "either", "neither"],
+        "determiners": ["some", "any", "many", "much", "few", "all", "both", "each", "every", "other", "another", "such", "own", "same"]
+      },
+      
+      "common_verbs": {
+        "be_verbs": ["be", "am", "is", "are", "was", "were", "been", "being"],
+        "auxiliary": ["have", "has", "had", "do", "does", "did", "will", "would", "shall", "should", "may", "might", "must", "can", "could"],
+        "action": ["make", "get", "go", "see", "know", "take", "come", "think", "look", "want", "give", "use", "find", "tell", "ask", "work", "seem", "feel", "try", "leave", "call", "keep", "let", "begin", "help", "show", "hear", "play", "run", "move", "live", "believe", "bring", "happen", "write", "sit", "stand", "lose", "pay", "meet", "include", "continue", "set", "learn", "change", "lead", "understand", "watch", "follow", "stop", "create", "speak", "read", "allow", "add", "spend", "grow", "open", "walk", "win", "offer", "remember", "love", "consider"]
+      },
+      
+      "common_adjectives": ["good", "new", "first", "last", "long", "great", "little", "own", "other", "old", "right", "big", "high", "different", "small", "large", "next", "early", "young", "important", "few", "public", "bad", "same", "able", "real", "best", "sure", "clear", "major", "better", "true", "free", "whole", "short", "easy", "strong", "specific", "certain", "open", "red", "difficult", "available", "likely", "simple", "third", "less", "hard", "low", "common"],
+      
+      "common_adverbs": ["not", "also", "just", "only", "very", "even", "back", "there", "down", "still", "more", "well", "never", "now", "then", "most", "always", "really", "here", "too", "again", "often", "almost", "less", "already", "today", "probably", "almost", "enough", "quite", "nearly", "else", "far", "together", "once", "however", "later", "soon", "rather", "away", "perhaps", "instead", "thus", "therefore", "otherwise"],
+      
+      "common_nouns": ["time", "person", "year", "way", "day", "thing", "man", "world", "life", "hand", "part", "child", "eye", "woman", "place", "work", "week", "case", "point", "government", "company", "number", "group", "problem", "fact", "people", "water", "room", "money", "area", "book", "name", "line", "business", "service", "house", "family", "power", "city", "hour", "game", "line", "side", "head", "month", "program", "question", "system", "office", "door", "health", "person", "art", "war", "history", "party", "result", "change", "morning", "reason", "research", "girl", "guy", "food", "moment", "air", "teacher", "force", "education"],
+      
+      "intensifiers": ["really", "very", "quite", "pretty", "super", "totally", "absolutely", "completely", "extremely", "highly", "incredibly", "particularly", "especially", "fairly", "rather", "somewhat"],
+      
+      "discourse_markers": ["well", "like", "okay", "right", "yes", "yeah", "yep", "yup", "nope", "nah", "sure", "actually", "basically", "literally", "honestly", "seriously", "frankly", "anyway", "anyhow", "meanwhile", "moreover", "furthermore", "besides", "additionally", "indeed", "certainly", "definitely"]
+    },
+    
+    "special_cases": {
+      "description": "Words that might look like obfuscation but are valid English",
+      "words": ["also", "along", "across", "among", "around", "below", "above", "beside", "inside", "outside", "beyond", "within", "toward", "towards", "upon", "onto", "into", "until", "unless", "except", "besides", "despite", "throughout"]
+    },
+    
+    "configuration": {
+      "case_sensitive": false,
+      "match_whole_word": true,
+      "priority": "high",
+      "description": "These words should NEVER be deobfuscated regardless of context"
+    }
+  }
