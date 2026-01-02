@@ -100,6 +100,10 @@ class DuplicationNormalizationAutomaton:
         return "".join(output_buffer)
 
 
+class LeetspeakReversalAutomaton:
+    """NFA-based leetspeak reversal: detects and converts leet chars to normal letters"""
+    def __init__(self, leet_data):
+=======
 class DeobfuscationService:
     """Service for deobfuscating obfuscated text using finite state automata"""
     def __init__(self):
@@ -134,6 +138,18 @@ class DeobfuscationService:
         self.word_dict.update(filipino_words)
     
     def deobfuscate(self, token: str) -> str:
+        # netspeak JSON may nest shortcuts under a top-level key like 'filipino_netspeak'
+        match = re.match(r"^([^\w]*)([\w@]+)([^\w]*)$", token)
+
+        prefix, core_word, suffix = "", token, ""
+        if match:
+            prefix = match.group(1)
+            core_word = match.group(2)
+            suffix = match.group(3)
+        
+        if not core_word:
+            return token
+        
         """Deobfuscate a single token, preserving punctuation"""
         if not token:
             return token
@@ -156,8 +172,25 @@ class DeobfuscationService:
         common_slang = {}
         acronyms = {}
         leet_examples = {}
+
+        common_slang = {}
+        acronyms = {}
+        leet_examples = {}
         
         if isinstance(self.netspeak_data, dict):
+            inner = self.netspeak_data.get("filipino_netspeak", {})
+
+            if isinstance(inner, dict):
+                shortcuts = inner.get("filipino_shortcuts", {})
+                common_slang = inner.get("common_slang", {})
+                acronyms = inner.get("acronyms", {})
+            else:
+                # if structure is flat
+                shortcuts = self.netspeak_data.get("filipino_shortcuts", {})
+
+        if isinstance(self.leet_data, dict):
+            leet_examples = self.leet_data.get("filipino_leet_examples", {})
+
             inner = self.netspeak_data.get("filipino_netspeak", {})
             if isinstance(inner, dict):
                 shortcuts = inner.get("filipino_shortcuts", {})

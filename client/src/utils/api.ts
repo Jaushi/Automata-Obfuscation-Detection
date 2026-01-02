@@ -51,3 +51,19 @@ export async function healthCheck() {
   
   return response.json();
 }
+
+export async function detectWithFuzzy(text: string, threshold: number = 75) {
+  const response = await fetch(`${API_BASE_URL}/detect/fuzzy`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text, threshold }),
+  });
+  
+  if (!response.ok) {
+    throw new Error('Fuzzy detection failed');
+  }
+  
+  return response.json();
+}

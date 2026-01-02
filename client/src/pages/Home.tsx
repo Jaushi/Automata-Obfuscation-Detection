@@ -2,7 +2,8 @@ import { useState } from 'react';
 import TextInput from '../components/TextInput';
 import LanguageChart from '../components/LanguageChart';
 import ResultDisplay from '../components/ResultDisplay';
-import { analyzeText } from '../utils/api';
+import { detectWithFuzzy } from '../utils/api';
+import type { FuzzyAnalysisResult } from '../types';
 
 interface AnalysisResult {
   original_text: string;
@@ -14,6 +15,12 @@ interface AnalysisResult {
     english: number;
   };
   character_count: number;
+  fuzzy_matches?: Array<{
+    original: string;
+    match: string;
+    score: number;
+  }>;
+  confidence?: number;
 }
 
 function Home() {
@@ -24,12 +31,27 @@ function Home() {
   const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
-
     setIsAnalyzing(true);
     setError(null);
     
     try {
-      const analysisResult = await analyzeText(text);
+      const fuzzyResult = await detectWithFuzzy(text, 75);
+      
+      // Transform fuzzy detection result to AnalysisResult format
+      const analysisResult: AnalysisResult = {
+        original_text: fuzzyResult.original_text,
+        detected_obfuscation: fuzzyResult.is_obfuscated,
+        obfuscation_percentage: fuzzyResult.confidence,
+        deciphered_text: fuzzyResult.deobfuscated,
+        language_distribution: {
+          tagalog: 0.5,
+          english: 0.5,
+        },
+        character_count: fuzzyResult.original_text.length,
+        fuzzy_matches: fuzzyResult.fuzzy_matches,
+        confidence: fuzzyResult.confidence,
+      };
+      
       setResult(analysisResult);
     } catch (err) {
       setError('Failed to analyze text. Please try again.');
