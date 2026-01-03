@@ -23,26 +23,36 @@ export async function analyzeText(text: string) {
   // Calculate obfuscation percentage
   const origTokens = original.split(/\s+/).filter(Boolean);
   const deobfTokens = deobfuscated.split(/\s+/).filter(Boolean);
-  const maxLen = Math.max(origTokens.length, deobfTokens.length, 1);
-  let diffCount = 0;
+
+  // Extract fuzzy matches from original and deobfuscated text
+  const fuzzy_matches = [];
+  const origWords = original.split(/\s+/);
+  const deobWords = deobfuscated.split(/\s+/);
   
-  for (let i = 0; i < maxLen; i++) {
-    if (origTokens[i] !== deobfTokens[i]) diffCount++;
+  for (let i = 0; i < Math.min(origWords.length, deobWords.length); i++) {
+    if (origWords[i] !== deobWords[i]) {
+      fuzzy_matches.push({
+        original: origWords[i],
+        match: deobWords[i],
+        score: 95 // Default confidence score
+      });
+    }
   }
 
-  const obfuscation_percentage = data.detection?.confidence 
-    ? Math.min(100, (data.detection.confidence * 100))
-    : Math.min(100, (diffCount / maxLen) * 100);
+  // If no changes were made, it's not obfuscated
+  const hasChanges = fuzzy_matches.length > 0;
+  
+  // Calculate percentage based on actual word changes
+  const obfuscation_percentage = hasChanges 
+    ? Math.min(100, (fuzzy_matches.length / origWords.length) * 100)
+    : 0;
 
   return {
     original_text: original,
-    detected_obfuscation: data.detection?.isObfuscated ?? (original !== deobfuscated),
-    obfuscation_percentage,
+    detected_obfuscation: hasChanges,
+    obfuscation_percentage: obfuscation_percentage,
     deciphered_text: deobfuscated,
-    language_distribution: {
-      tagalog: 0.5,
-      english: 0.5,
-    },
+    fuzzy_matches: fuzzy_matches,
     character_count: original.length,
   };
 }

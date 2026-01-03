@@ -10,6 +10,11 @@ interface AnalysisResult {
   deciphered_text?: string;
   character_count: number;
   confidence?: number;
+  fuzzy_matches?: Array<{
+    original: string;
+    match: string;
+    score: number;
+  }>;
 }
 
 function Home() {
@@ -37,6 +42,7 @@ function Home() {
         obfuscation_percentage: analysisResult.obfuscation_percentage,
         deciphered_text: analysisResult.deciphered_text,
         character_count: analysisResult.character_count,
+        fuzzy_matches: analysisResult.fuzzy_matches,
       });
     } catch (err) {
       setError('Failed to analyze text. Please try again.');
@@ -123,40 +129,59 @@ function Home() {
               <p className="mb-4">
                 The <strong>Taglish Obfuscation Detector</strong> is an advanced system designed to 
                 identify and decipher obfuscated Taglish (Tagalog-English) text using finite automata 
-                theory and natural language processing techniques.
+                theory, sophisticated fuzzy matching algorithms, and natural language processing techniques.
               </p>
               
               <h3 className="text-2xl font-semibold text-indigo-800 mt-6 mb-3">
                 Key Features
               </h3>
               <ul className="list-disc list-inside space-y-2 mb-4">
-                <li>Real-time obfuscation detection using pattern recognition</li>
+                <li>Real-time obfuscation detection with accurate percentage calculation</li>
                 <li>Automatic deciphering of leetspeak and character substitutions</li>
+                <li>Advanced fuzzy matching with multi-factor scoring algorithm</li>
+                <li>Word-by-word deobfuscation visualization with confidence scores</li>
+                <li>Comprehensive dictionary: 234,499 words (Filipino + English)</li>
                 <li>Duplication normalization (heeeey → hey)</li>
+                <li>Support for common obfuscation patterns (3→e, 1→i, 0→o, 4→a, 5→s, etc.)</li>
                 <li>Character-level finite automata processing</li>
-                <li>Fuzzy matching for intelligent word correction</li>
-                <li>Support for common obfuscation patterns (3→e, 1→i, 0→o, etc.)</li>
               </ul>
 
               <h3 className="text-2xl font-semibold text-indigo-800 mt-6 mb-3">
                 How It Works
               </h3>
               <ol className="list-decimal list-inside space-y-2 mb-4">
-                <li><strong>Detection:</strong> Identifies 5 types of obfuscation patterns using NFAs</li>
+                <li><strong>Detection:</strong> Identifies obfuscation patterns using NFAs and pattern matching</li>
                 <li><strong>Transformation:</strong> Reverses leetspeak and normalizes character duplication</li>
-                <li><strong>Dictionary Lookup:</strong> Checks against netspeak dictionary</li>
-                <li><strong>Fuzzy Matching:</strong> Finds closest valid word for unrecognized tokens</li>
-                <li><strong>Output:</strong> Returns original and deobfuscated text with confidence</li>
+                <li><strong>Dictionary Lookup:</strong> Checks against comprehensive Filipino and English dictionaries</li>
+                <li><strong>Fuzzy Matching:</strong> Uses multi-factor scoring (Levenshtein distance, length penalties/bonuses, prefix matching) to find the best word match</li>
+                <li><strong>Visualization:</strong> Displays word-by-word transformations with confidence scores</li>
+                <li><strong>Output:</strong> Returns original text, deobfuscated text, obfuscation percentage, and detailed word matches</li>
               </ol>
 
               <h3 className="text-2xl font-semibold text-indigo-800 mt-6 mb-3">
                 Technology Stack
               </h3>
-              <ul className="list-disc list-inside space-y-2">
+              <ul className="list-disc list-inside space-y-2 mb-4">
                 <li><strong>Frontend:</strong> React + TypeScript + Vite + TailwindCSS</li>
                 <li><strong>Backend:</strong> Python Flask with finite automata implementation</li>
                 <li><strong>Theory:</strong> Finite State Machines & Pattern Matching</li>
-                <li><strong>NLP:</strong> Fuzzy string matching with RapidFuzz</li>
+                <li><strong>NLP Libraries:</strong> RapidFuzz (fuzzy matching with Levenshtein distance)</li>
+                <li><strong>Dictionaries:</strong> Custom Filipino/Taglish netspeak patterns + English word corpus (JSON-based)</li>
+              </ul>
+
+              <h3 className="text-2xl font-semibold text-indigo-800 mt-6 mb-3">
+                Fuzzy Matching Algorithm
+              </h3>
+              <p className="mb-4">
+                Our sophisticated multi-factor scoring system ensures accurate word matching:
+              </p>
+              <ul className="list-disc list-inside space-y-2">
+                <li><strong>Base Score:</strong> Levenshtein distance similarity</li>
+                <li><strong>Length Penalty:</strong> -5% per missing character (prevents truncated matches)</li>
+                <li><strong>Length Bonus:</strong> +4% per character after 3 (favors complete words)</li>
+                <li><strong>Prefix Matching:</strong> +3% per matching character in first 3 positions</li>
+                <li><strong>Exact Length Match:</strong> +2% bonus when lengths match perfectly</li>
+                <li><strong>Dynamic Thresholds:</strong> 75% for 4+ char words, 60% for 3-char words</li>
               </ul>
             </div>
           </div>
