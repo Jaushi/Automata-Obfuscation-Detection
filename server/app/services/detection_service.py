@@ -33,7 +33,7 @@ class DetectionService:
             
             from nltk.corpus import words
             english_words = set(w.lower() for w in words.words())
-            logger.info(f"✅ Loaded {len(english_words)} English words from NLTK")
+            logger.info(f"Loaded {len(english_words)} English words from NLTK")
             return english_words
         except Exception as e:
             logger.warning(f"Could not load NLTK words: {e}")
@@ -51,7 +51,7 @@ class DetectionService:
                 'know', 'time', 'life', 'work', 'right', 'come', 'look', 'day',
                 'great', 'thanks', 'please', 'sorry', 'help', 'friend', 'family'
             }
-            logger.info(f"✅ PyEnchant available for spell checking ({len(common_english)} common words)")
+            logger.info(f"PyEnchant available for spell checking ({len(common_english)} common words)")
             return common_english
         except Exception as e:
             logger.warning(f"Could not load PyEnchant: {e}")
@@ -173,7 +173,7 @@ class DetectionService:
                 limit=1
             )
             
-            if matches and matches[0]['score'] >= 70:  # Lowered from 75 to catch short words like "mga"
+            if matches and matches[0]['score'] >= 70:  
                 fuzzy_corrections.append({
                     'original': word,
                     'match': matches[0]['word'],
