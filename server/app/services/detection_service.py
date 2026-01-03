@@ -4,11 +4,13 @@ from typing import Optional, Dict
 from .preprocessing_service import normalize_input, word_tokenize
 from .dictionary_service import load_and_cache_dictionaries, cached_dictionaries
 
+
 class AutomatonState:
     def __init__(self, name, is_final=False):
         self.name = name
         self.is_final = is_final
-        self.transitions = {}
+        self.transitions = {}   # char -> set[state]
+        self.epsilon = set()    # ε-transitions
 
 class NFA:
     def __init__(self):
@@ -16,9 +18,11 @@ class NFA:
         self.start_state = None
 
     def add_state(self, name, is_final=False):
-        state = AutomatonState(name, is_final)
-        self.states[name] = state
-        return state
+        if name not in self.states:
+            self.states[name] = AutomatonState(name, is_final)
+        else:
+            self.states[name].is_final |= is_final
+        return self.states[name]
 
     def set_start(self, name):
         self.start_state = name
@@ -27,317 +31,371 @@ class NFA:
         for sym in symbols:
             self.states[from_state].transitions.setdefault(sym, set()).add(to_state)
 
-    def run(self, input_text: str) -> bool:
-        if not self.start_state or self.start_state not in self.states:
+    def add_epsilon(self, from_state, to_state):
+        self.states[from_state].epsilon.add(to_state)
+
+    def _epsilon_closure(self, states):
+        stack = list(states)
+        closure = set(states)
+        while stack:
+            s = stack.pop()
+            for nxt in self.states[s].epsilon:
+                if nxt not in closure:
+                    closure.add(nxt)
+                    stack.append(nxt)
+        return closure
+
+    def run(self, text: str) -> bool:
+        if not self.start_state:
             return False
-        current = {self.start_state}
-        for char in input_text.lower():
+
+        current_states = self._epsilon_closure({self.start_state})
+
+        for char in text.lower():
             next_states = set()
-            for state in current:
+            for state in current_states:
                 if char in self.states[state].transitions:
                     next_states |= self.states[state].transitions[char]
+
             if not next_states:
-                break
-            current = next_states
-        return any(self.states[s].is_final for s in current)
+                return False
 
+            current_states = self._epsilon_closure(next_states)
 
-class VowelOmissionAutomaton:
+        return any(self.states[s].is_final for s in current_states)
+
+class VowelOmissionDetector:
     def __init__(self):
         self.nfa = NFA()
         consonants = "bcdfghjklmnpqrstvwxyz"
-        
+
         self.nfa.add_state("START")
         self.nfa.add_state("C1")
         self.nfa.add_state("C2")
-        self.nfa.add_state("OBF", is_final=True)
+        self.nfa.add_state("MATCH", is_final=True)
         self.nfa.set_start("START")
-        
+
         self.nfa.add_transition("START", consonants, "C1")
         self.nfa.add_transition("C1", consonants, "C2")
-        self.nfa.add_transition("C2", consonants, "OBF")
-        self.nfa.add_transition("OBF", consonants, "OBF")
+        self.nfa.add_transition("C2", consonants, "MATCH")
+        self.nfa.add_transition("MATCH", consonants, "MATCH")
+
+    def detect(self, token: str) -> bool:
+        return self.nfa.run(token)
+
+class CharDuplicationDetector:
+    def __init__(self):
+        self.nfa = NFA()
+        letters = "abcdefghijklmnopqrstuvwxyz"
+
+        self.nfa.add_state("START")
+        self.nfa.set_start("START")
+
+        # One state per character
+        for ch in letters:
+            self.nfa.add_state(f"ONE_{ch}")
+            self.nfa.add_state(f"TWO_{ch}")
+            self.nfa.add_state(f"MATCH_{ch}", is_final=True)
+
+            self.nfa.add_transition("START", ch, f"ONE_{ch}")
+            self.nfa.add_transition(f"ONE_{ch}", ch, f"TWO_{ch}")
+            self.nfa.add_transition(f"TWO_{ch}", ch, f"MATCH_{ch}")
+            self.nfa.add_transition(f"MATCH_{ch}", ch, f"MATCH_{ch}")
+
+        # Reset on different character
+        for ch1 in letters:
+            for ch2 in letters:
+                if ch1 != ch2:
+                    self.nfa.add_transition(f"ONE_{ch1}", ch2, f"ONE_{ch2}")
+                    self.nfa.add_transition(f"TWO_{ch1}", ch2, f"ONE_{ch2}")
+                    self.nfa.add_transition(f"MATCH_{ch1}", ch2, f"ONE_{ch2}")
 
     def detect(self, token: str) -> bool:
         return self.nfa.run(token)
 
 
-class CharacterDuplicationAutomaton:
-    """Detects repeated characters (e.g., 'hellooo', 'yessss')"""
-    def __init__(self):
-        self.pattern = re.compile(r'(.)\1{2,}')  # 3+ repeated chars
-    
-    def detect(self, token: str) -> bool:
-        return bool(self.pattern.search(token.lower()))
-
-
-class LeetspeakAutomaton:
+class LeetspeakDetector:
     def __init__(self, leet_data):
         self.nfa = NFA()
         letters = "abcdefghijklmnopqrstuvwxyz"
-        
+
         leet_chars = set()
         if leet_data and 'character_substitutions' in leet_data:
             for subs in leet_data['character_substitutions'].values():
                 leet_chars.update(subs if isinstance(subs, list) else [subs])
-        
+
+        leet_str = "".join(leet_chars)
+
         self.nfa.add_state("START")
         self.nfa.add_state("LETTER")
-        self.nfa.add_state("LEET", is_final=True)
+        self.nfa.add_state("MATCH", is_final=True)
         self.nfa.set_start("START")
-        
-        leet_str = "".join(leet_chars)
+
         self.nfa.add_transition("START", letters, "LETTER")
         self.nfa.add_transition("LETTER", letters, "LETTER")
-        self.nfa.add_transition("START", leet_str, "LEET")
-        self.nfa.add_transition("LETTER", leet_str, "LEET")
-        self.nfa.add_transition("LEET", letters + leet_str, "LEET")
+        self.nfa.add_transition("START", leet_str, "MATCH")
+        self.nfa.add_transition("LETTER", leet_str, "MATCH")
+        self.nfa.add_transition("MATCH", letters + leet_str, "MATCH")
 
     def detect(self, token: str) -> bool:
         return self.nfa.run(token)
 
-
-class MorphologyAutomaton:
-    def __init__(self, morph_data: Optional[Dict] = None):
+class MorphologyDetector:
+    """
+    Detects Filipino morphological patterns (prefixes, suffixes, infixes)
+    using separate NFAs.
+    """
+    def __init__(self, morph_data=None):
         self.letters = "abcdefghijklmnopqrstuvwxyz"
-        self.vowels = "aeiou"
         self.consonants = "bcdfghjklmnpqrstvwxyz"
-        
-        self.morph_data = morph_data or {}
-        affixes = self.morph_data.get('affixes', {})
-        
-        # Filter out infixes from prefixes
-        all_prefixes = affixes.get('prefixes', {})
-        infixes_set = set(affixes.get('infixes', {}).keys())
-        self.prefixes = [p for p in all_prefixes.keys() if p not in infixes_set]
-        
-        self.suffixes = list(affixes.get('suffixes', {}).keys())
-        
-        # Fallback defaults
-        if not self.prefixes:
-            self.prefixes = ['mag', 'nag', 'pag', 'ma', 'ka', 'pang', 'mang']
-        if not self.suffixes:
-            self.suffixes = ['an', 'han', 'in', 'hin']
-        
-        # Load validation rules
-        rules = self.morph_data.get('validation_rules', {})
-        self.min_word_length = rules.get('min_word_length', 2)
-        self.min_root_after_prefix = rules.get('min_root_after_prefix', 2)
-        self.min_root_before_suffix = rules.get('min_root_before_suffix', 2)
-        
-        # Build NFAs
+
+        morph_data = morph_data or {}
+        affixes = morph_data.get("affixes", {})
+
+        self.prefixes = list(affixes.get("prefixes", {}).keys())
+        self.suffixes = list(affixes.get("suffixes", {}).keys())
+        self.infixes = list(affixes.get("infixes", {}).keys())
+
         self.prefix_nfa = self._build_prefix_nfa()
         self.suffix_nfa = self._build_suffix_nfa()
-        self.um_infix_nfa = self._build_um_infix_nfa()
-        self.in_infix_nfa = self._build_in_infix_nfa()
-        
-        # Compile regex patterns
-        obf_patterns = self.morph_data.get('obfuscation_patterns', {})
-        
-        lengthening = obf_patterns.get('lengthening', {})
-        self.vowel_lengthening = re.compile(lengthening.get('vowel_lengthening', r'[aeiou]{2,}'))
-        self.consonant_lengthening = re.compile(lengthening.get('consonant_lengthening', r'([bcdfghjklmnpqrstvwxyz])\1{1,}'))
-        
-        reduplication = obf_patterns.get('reduplication', {})
-        self.full_reduplication = re.compile(reduplication.get('full_reduplication', r'^([a-z]{2,})\1+$'))
-        self.cv_reduplication = re.compile(reduplication.get('cv_reduplication', r'^([bcdfghjklmnpqrstvwxyz][aeiou])\1[a-z]*$'))
-        
-        vowel_omission = obf_patterns.get('vowel_omission', {})
-        self.consonant_cluster = re.compile(vowel_omission.get('consonant_cluster', r'[bcdfghjklmnpqrstvwxyz]{3,}'))
-        self.all_consonants = re.compile(vowel_omission.get('all_consonants', r'^[bcdfghjklmnpqrstvwxyz]{2,}$'))
-    
+        self.infix_nfa = self._build_infix_nfa()
+
+    # ---------- PREFIX ----------
     def _build_prefix_nfa(self) -> NFA:
+        """
+        nag-, mag-, pag-, ka-, etc.
+        """
         nfa = NFA()
         nfa.add_state("START")
         nfa.add_state("ROOT", is_final=True)
         nfa.set_start("START")
-        
+
         for prefix in self.prefixes:
-            if len(prefix) < 2:
-                continue
-            
             prev = "START"
             for i, ch in enumerate(prefix):
                 state = f"P_{prefix}_{i}"
-                if state not in nfa.states:
-                    nfa.add_state(state)
+                nfa.add_state(state)
                 nfa.add_transition(prev, ch, state)
                 prev = state
-            
-            # Must have min_root_after_prefix chars after prefix
-            for _ in range(self.min_root_after_prefix):
-                next_state = f"{prev}_ROOT"
-                if next_state not in nfa.states:
-                    nfa.add_state(next_state)
-                nfa.add_transition(prev, self.letters, next_state)
-                prev = next_state
-            
-            nfa.states[prev].is_final = True
-            nfa.add_transition(prev, self.letters, prev)
-        
-        # Root without prefix
-        nfa.add_transition("START", self.letters, "ROOT")
+
+            # after prefix → root
+            nfa.add_transition(prev, self.letters, "ROOT")
+
         nfa.add_transition("ROOT", self.letters, "ROOT")
-        
         return nfa
-    
+
+    # ---------- SUFFIX ----------
     def _build_suffix_nfa(self) -> NFA:
+        """
+        -an, -in, -han, etc.
+        """
         nfa = NFA()
         nfa.add_state("START")
         nfa.set_start("START")
+
+        # root loop
         nfa.add_transition("START", self.letters, "START")
-        
+
         for suffix in self.suffixes:
             prev = "START"
             for i, ch in enumerate(suffix):
                 state = f"S_{suffix}_{i}"
                 is_final = (i == len(suffix) - 1)
-                if state not in nfa.states:
-                    nfa.add_state(state, is_final=is_final)
+                nfa.add_state(state, is_final=is_final)
                 nfa.add_transition(prev, ch, state)
                 prev = state
-        
+
         return nfa
-    
-    def _build_um_infix_nfa(self) -> NFA:
+
+    # ---------- INFIX ----------
+    def _build_infix_nfa(self) -> NFA:
+        """
+        um, in, etc.
+        Pattern: consonant + infix + root
+        """
         nfa = NFA()
         nfa.add_state("START")
         nfa.add_state("C")
-        nfa.add_state("U")
-        nfa.add_state("M")
-        nfa.add_state("ROOT", is_final=True)
         nfa.set_start("START")
-        
+
         nfa.add_transition("START", self.consonants, "C")
-        nfa.add_transition("C", "u", "U")
-        nfa.add_transition("U", "m", "M")
-        nfa.add_transition("M", self.letters, "ROOT")
-        nfa.add_transition("ROOT", self.letters, "ROOT")
-        
+
+        for infix in self.infixes:
+            prev = "C"
+            for i, ch in enumerate(infix):
+                state = f"INF_{infix}_{i}"
+                nfa.add_state(state)
+                nfa.add_transition(prev, ch, state)
+                prev = state
+
+            root_state = f"ROOT_{infix}"
+            nfa.add_state(root_state, is_final=True)
+            nfa.add_transition(prev, self.letters, root_state)
+            nfa.add_transition(root_state, self.letters, root_state)
+
         return nfa
-    
-    def _build_in_infix_nfa(self) -> NFA:
-        nfa = NFA()
-        nfa.add_state("START")
-        nfa.add_state("C")
-        nfa.add_state("I")
-        nfa.add_state("N")
-        nfa.add_state("ROOT", is_final=True)
-        nfa.set_start("START")
-        
-        nfa.add_transition("START", self.consonants, "C")
-        nfa.add_transition("C", "i", "I")
-        nfa.add_transition("I", "n", "N")
-        nfa.add_transition("N", self.letters, "ROOT")
-        nfa.add_transition("ROOT", self.letters, "ROOT")
-        
-        return nfa
-    
+
     def detect(self, token: str) -> bool:
-        if not token or len(token) < self.min_word_length:
+        if len(token) < 3:
             return False
-        
+
         t = token.lower()
-        
-        # Check affixes
-        if self.prefix_nfa.run(t) or self.suffix_nfa.run(t):
-            return True
-        if self.um_infix_nfa.run(t) or self.in_infix_nfa.run(t):
-            return True
-        
-        # Check obfuscation patterns
-        patterns = [
-            self.vowel_lengthening.search(t),
-            self.consonant_lengthening.search(t),
-            self.full_reduplication.match(t),
-            self.cv_reduplication.match(t),
-            self.consonant_cluster.search(t),
-            len(t) >= 3 and self.all_consonants.match(t)
-        ]
-        
-        return any(patterns)
+        return (
+            self.prefix_nfa.run(t) or
+            self.suffix_nfa.run(t) or
+            self.infix_nfa.run(t)
+        )
 
+class NetspeakDetector:
+    """
+    Detects Filipino netspeak using a PURE NFA:
+    - single-token abbreviations (u, lol, omg)
+    - multi-token phrases (thank you, oh my god)
+    """
 
-class NetspeakAutomaton:
     def __init__(self, netspeak_data):
         self.nfa = NFA()
-        letters = "abcdefghijklmnopqrstuvwxyz0123456789"
-        
-        self.nfa.add_state("START")
-        self.nfa.add_state("SHORT", is_final=True)
-        self.nfa.set_start("START")
-        
-        self.nfa.add_transition("START", letters, "SHORT")
-        self.nfa.add_transition("SHORT", letters, "SHORT")
-        
-        self.dict_lookup = set()
-        
-        if netspeak_data and 'filipino_netspeak' in netspeak_data:
-            ns = netspeak_data['filipino_netspeak']
-            
-            shortcuts = ns.get('filipino_shortcuts', {})
-            for root, abbrevs in shortcuts.items():
-                self.dict_lookup.add(root.lower())
-                if isinstance(abbrevs, list):
-                    self.dict_lookup.update(v.lower() for v in abbrevs)
-                else:
-                    self.dict_lookup.add(abbrevs.lower())
-            
-            acronyms = ns.get('acronyms', {})
-            self.dict_lookup.update(k.lower() for k in acronyms.keys())
-            
-            slang = ns.get('common_slang', {})
-            for meaning, slang_terms in slang.items():
-                if isinstance(slang_terms, list):
-                    self.dict_lookup.update(term.lower() for term in slang_terms if isinstance(term, str))
-                else:
-                    self.dict_lookup.add(slang_terms.lower())
 
-    def detect(self, token: str) -> bool:
-        token_clean = token.lower().strip('.,!?;:()[]{}"\'-')
-        if not (2 <= len(token_clean) <= 6):
-            return False
-        return self.nfa.run(token_clean) and token_clean in self.dict_lookup
+        terms = set()
+        if netspeak_data and "filipino_netspeak" in netspeak_data:
+            ns = netspeak_data["filipino_netspeak"]
+            for key in [
+                "filipino_shortcuts",
+                "acronyms",
+                "common_slang",
+                "filipino_english",
+                "common_phrases",
+            ]:
+                data = ns.get(key, {})
+                for root, abbrevs in data.items():
+                    terms.add(root.lower())
+                    if isinstance(abbrevs, list):
+                        for a in abbrevs:
+                            terms.add(str(a).lower())
+                    elif abbrevs:
+                        terms.add(str(abbrevs).lower())
+
+        self.single_tokens = set()
+        self.multi_tokens = set()
+
+        for t in terms:
+            t = t.strip()
+            if " " in t:
+                self.multi_tokens.add(t)
+            elif 1 <= len(t) <= 6:
+                self.single_tokens.add(t)
+
+        self._build_nfa()
+
+    # --------------------------------------------------
+
+    def _build_nfa(self):
+        self.nfa.add_state("START")
+        self.nfa.set_start("START")
+
+        alphabet = "abcdefghijklmnopqrstuvwxyz0123456789 '"
+
+        # Σ* scan (allows match anywhere in text)
+        self.nfa.add_transition("START", alphabet, "START")
+
+        # ---- SINGLE TOKEN WORDS ----
+        for word in self.single_tokens:
+            prev = "START"
+            for i, ch in enumerate(word):
+                state = f"SINGLE_{word}_{i}"
+                is_final = (i == len(word) - 1)
+                self.nfa.add_state(state, is_final=is_final)
+                self.nfa.add_transition(prev, ch, state)
+                prev = state
+
+        # ---- MULTI TOKEN PHRASES ----
+        for phrase in self.multi_tokens:
+            prev = "START"
+            for i, ch in enumerate(phrase):
+                state = f"MULTI_{phrase}_{i}"
+                is_final = (i == len(phrase) - 1)
+                self.nfa.add_state(state, is_final=is_final)
+                self.nfa.add_transition(prev, ch, state)
+                prev = state
+
+    # --------------------------------------------------
+    # PUBLIC API (IMPORTANT PART)
+
+    def detect_single_token(self, token: str) -> bool:
+        token = token.lower().strip('.,!?;:()[]{}"\'-')
+        return self.nfa.run(token)
+
+    def detect_multi_token(self, text: str) -> bool:
+        # RAW TEXT — spaces preserved
+        return self.nfa.run(text.lower())
+    
+    def detect(self, token: str, *, multi: bool = False) -> bool:
+        return (
+            self.detect_multi_token(token)
+            if multi
+            else self.detect_single_token(token)
+        )
 
 
 class DetectionService:
+    """
+    Main detection service - uses NFAs to find obfuscation patterns
+    
+    This service coordinates multiple specialized detectors:
+    - VowelOmissionDetector: txt, plz, thx
+    - CharDuplicationDetector: hellooo, yesss
+    - LeetspeakDetector: h3ll0, p4ssw0rd
+    - MorphologyDetector: Filipino affixes (nag-, -um-, -in)
+    - NetspeakDetector: u, ty, lol, omg
+    """
     def __init__(self):
+        # Load dictionaries
         try:
             load_and_cache_dictionaries()
         except Exception as e:
             print(f"Warning: {e}")
         
-        # Load dictionary data
-        leet_obj = cached_dictionaries.get('leetspeak_map')
-        leet_data = leet_obj.data if leet_obj else {}
+        leet_data = cached_dictionaries.get('leetspeak_map')
+        net_data = cached_dictionaries.get('netspeak_patterns')
+        morph_data = cached_dictionaries.get('morphology_patterns')
         
-        net_obj = cached_dictionaries.get('netspeak_patterns')
-        net_data = net_obj.data if net_obj else {}
+        # DEBUG: Check what was loaded
+        print(f"[DEBUG DetectionService] leet_data: {leet_data}")
+        print(f"[DEBUG DetectionService] net_data: {net_data}")
+        print(f"[DEBUG DetectionService] morph_data: {morph_data}")
         
-        morph_obj = cached_dictionaries.get('morphology_patterns')
-        morph_data = morph_obj.data if morph_obj else {}
+        if net_data:
+            print(f"[DEBUG DetectionService] net_data.data keys: {net_data.data.keys() if hasattr(net_data, 'data') else 'NO DATA ATTR'}")
         
-        # Initialize automatons
-        self.vowel = VowelOmissionAutomaton()
-        self.duplication = CharacterDuplicationAutomaton()  # FIXED: Added missing automaton
-        self.leet = LeetspeakAutomaton(leet_data)
-        self.morph = MorphologyAutomaton(morph_data)  # FIXED: Pass morph_data
-        self.netspeak = NetspeakAutomaton(net_data)
+        # Initialize all detectors
+        self.vowel = VowelOmissionDetector()
+        self.duplication = CharDuplicationDetector()
+        self.leet = LeetspeakDetector(leet_data.data if leet_data else {})
+        self.morph = MorphologyDetector(morph_data.data if morph_data else {})
+        self.netspeak = NetspeakDetector(net_data.data if net_data else {})
 
     def analyze(self, text: str, language: str = 'unknown') -> dict:
         tokens = word_tokenize(normalize_input(text))
-        
+
+        # MULTI-token netspeak → run on RAW TEXT
+        has_multi_token_netspeak = self.netspeak.detect_multi_token(text)
+
         signals = {
             'vowel_omission': any(self.vowel.detect(t) for t in tokens),
             'character_duplication': any(self.duplication.detect(t) for t in tokens),
             'leetspeak': any(self.leet.detect(t) for t in tokens),
             'morphology': any(self.morph.detect(t) for t in tokens),
-            'netspeak': any(self.netspeak.detect(t) for t in tokens)
+
+            # SINGLE-token netspeak → run per token
+            'netspeak': (
+                has_multi_token_netspeak or
+                any(self.netspeak.detect_single_token(t) for t in tokens)
+            )
         }
-        
+
         detected = any(signals.values())
         confidence = sum(signals.values()) * 0.20
-        
+
         return {
             'isObfuscated': detected,
             'confidence': min(confidence, 1.0),

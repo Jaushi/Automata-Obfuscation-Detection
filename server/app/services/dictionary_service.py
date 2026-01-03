@@ -9,11 +9,13 @@ logging.basicConfig(level=logging.INFO)
 DICTIONARY_FILES = {
     'netspeak_patterns': 'app/dictionaries/netspeak_patterns.json',
     'leetspeak_map': 'app/dictionaries/leetspeak_map.json',
-    'morphology_patterns': 'app/dictionaries/morphology_patterns.json'
+    'morphology_patterns': 'app/dictionaries/morphology_patterns.json',
+    'english_words': 'app/dictionaries/english_words.json'  # ADD THIS
 }
 
 cached_dictionaries = {} 
 filipino_word_set: Set[str] = set()
+english_word_set: Set[str] = set()
 
 def load_and_cache_dictionaries():
     model_classes = {
@@ -22,6 +24,11 @@ def load_and_cache_dictionaries():
         'morphology_patterns': MorphologyPatterns
     }
     for name, file_path in DICTIONARY_FILES.items():
+        if name == 'english_words':
+            # Load English words separately
+            load_english_dictionary()
+            continue
+            
         data = load_dictionary(file_path)
         model_class = model_classes[name]
         if "error" in data:
@@ -43,6 +50,44 @@ def load_dictionary(file_path):
         return {"error": f"Invalid JSON in file: {file_path}"}
     except Exception as e:
         return {"error": str(e)}
+
+def load_english_dictionary():
+    """Load English words dictionary"""
+    global english_word_set
+    try:
+        base_dir = os.path.dirname(__file__)
+        dict_path = os.path.abspath(
+            os.path.join(base_dir, '..', 'dictionaries', 'english_words.json')
+        )
+
+        with open(dict_path, encoding='utf-8') as f:
+            data = json.load(f)
+
+        words = set()
+
+        # Extract words from all keys and values
+        def extract(obj):
+            if isinstance(obj, str):
+                w = obj.lower().strip()
+                if len(w) >= 2:
+                    words.add(w)
+
+            elif isinstance(obj, dict):
+                for v in obj.values():
+                    extract(v)
+
+            elif isinstance(obj, list):
+                for item in obj:
+                    extract(item)
+
+        extract(data)
+
+        english_word_set = words
+        logging.info(f"Loaded {len(english_word_set)} English words (LOCAL)")
+
+    except Exception as e:
+        logging.error(f"Failed to load English dictionary: {e}")
+        english_word_set = set()
 
 def load_filipino_dictionary():
     global filipino_word_set
@@ -86,3 +131,7 @@ def load_filipino_dictionary():
 def get_filipino_words() -> Set[str]:
     """Get the set of Tagalog/Filipino words for fuzzy matching"""
     return filipino_word_set
+
+def get_english_words() -> Set[str]:
+    """Get the set of English words for fuzzy matching"""
+    return english_word_set

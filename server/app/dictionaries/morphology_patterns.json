@@ -27,11 +27,11 @@
   "obfuscation_patterns": {
     "lengthening": {
       "vowel_lengthening": "[aeiou]{2,}",
-      "consonant_lengthening": "([bcdfghjklmnpqrstvwxyz])\\\\1{1,}"
+      "consonant_lengthening": "([bcdfghjklmnpqrstvwxyz])\\1{1,}"
     },
     "reduplication": {
-      "full_reduplication": "^([a-z]{2,})\\\\1+$",
-      "cv_reduplication": "^([bcdfghjklmnpqrstvwxyz][aeiou])\\\\1[a-z]*$"
+      "full_reduplication": "^([a-z]{2,})\\1+$",
+      "cv_reduplication": "^([bcdfghjklmnpqrstvwxyz][aeiou])\\1[a-z]*$"
     },
     "vowel_omission": {
       "consonant_cluster": "[bcdfghjklmnpqrstvwxyz]{3,}",
