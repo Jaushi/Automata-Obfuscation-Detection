@@ -1,12 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
 export async function analyzeText(text: string) {
-  const response = await fetch(`${API_BASE_URL}/translate`, {
+  // Full pipeline: detect obfuscation + deobfuscate text
+  const response = await fetch(`${API_BASE_URL}/analyze`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, use_fuzzy: true }),
   });
 
   if (!response.ok) {
@@ -15,39 +16,94 @@ export async function analyzeText(text: string) {
 
   const data = await response.json();
 
-  // Map backend /translate response to frontend AnalysisResult shape
+  // Map backend response to frontend AnalysisResult shape
   const original = data.original ?? text;
-  const translated = data.translated ?? '';
+  const deobfuscated = data.deobfuscated ?? text;
 
+  // Calculate obfuscation percentage
   const origTokens = original.split(/\s+/).filter(Boolean);
-  const transTokens = translated.split(/\s+/).filter(Boolean);
-  const maxLen = Math.max(origTokens.length, transTokens.length, 1);
-  let diffCount = 0;
-  for (let i = 0; i < maxLen; i++) {
-    if (origTokens[i] !== transTokens[i]) diffCount++;
+  const deobfTokens = deobfuscated.split(/\s+/).filter(Boolean);
+
+  // Extract fuzzy matches from original and deobfuscated text
+  const fuzzy_matches = [];
+  const origWords = original.split(/\s+/);
+  const deobWords = deobfuscated.split(/\s+/);
+  
+  for (let i = 0; i < Math.min(origWords.length, deobWords.length); i++) {
+    if (origWords[i] !== deobWords[i]) {
+      fuzzy_matches.push({
+        original: origWords[i],
+        match: deobWords[i],
+        score: 95 // Default confidence score
+      });
+    }
   }
 
-  const obfuscation_percentage = Math.min(100, (diffCount / maxLen) * 100);
+  // If no changes were made, it's not obfuscated
+  const hasChanges = fuzzy_matches.length > 0;
+  
+  // Calculate percentage based on actual word changes
+  const obfuscation_percentage = hasChanges 
+    ? Math.min(100, (fuzzy_matches.length / origWords.length) * 100)
+    : 0;
 
   return {
     original_text: original,
-    detected_obfuscation: original !== translated,
-    obfuscation_percentage,
-    deciphered_text: translated,
-    language_distribution: {
-      tagalog: 0.5,
-      english: 0.5,
-    },
+    detected_obfuscation: hasChanges,
+    obfuscation_percentage: obfuscation_percentage,
+    deciphered_text: deobfuscated,
+    fuzzy_matches: fuzzy_matches,
     character_count: original.length,
   };
 }
 
-export async function healthCheck() {
-  const response = await fetch(`${API_BASE_URL}/health`);
-  
+export async function detectObfuscation(text: string) {
+  // Just detect obfuscation patterns
+  const response = await fetch(`${API_BASE_URL}/detect`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  });
+
   if (!response.ok) {
-    throw new Error('API health check failed');
+    throw new Error('Detection failed');
   }
-  
+
   return response.json();
+}
+
+export async function deobfuscateText(text: string, use_fuzzy: boolean = true) {
+  // Just deobfuscate text
+  const response = await fetch(`${API_BASE_URL}/deobfuscate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text, use_fuzzy }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Deobfuscation failed');
+  }
+
+  return response.json();
+}
+
+export async function healthCheck() {
+  // Check if API is available
+  try {
+    const response = await fetch(`${API_BASE_URL}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'test' }),
+    });
+    
+    return response.ok;
+  } catch {
+    return false;
+  }
 }

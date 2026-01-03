@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
 from ..services.dictionary_service import cached_dictionaries, DICTIONARY_FILES
 from ..utils.search_utils import search_dictionary
+from app.services.detection_service import DetectionService
+
 
 dictionary_bp = Blueprint('dictionary', __name__)
 
