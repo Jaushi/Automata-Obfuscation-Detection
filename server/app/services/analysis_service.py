@@ -5,24 +5,38 @@ from .deobfuscation_service import DeobfuscationService
 from .preprocessing_service import normalize_input, word_tokenize
 
 class AnalysisService:
-    """Main service combining detection and deobfuscation in one pipeline"""
-
+    """
+    High-level coordinator for detection and deobfuscation.
+    Deobfuscation is signal-driven: uses detection results to guide corrections.
+    """
+    
     def __init__(self):
         self.detector = DetectionService()
         self.deobfuscator = DeobfuscationService()
     
     def analyze(self, text: str, language: str = 'unknown', use_fuzzy: bool = True) -> dict:
-        """Analyze text: detect obfuscation types and deobfuscate intelligently"""
+        """
+        Analyze text: detect obfuscation and apply corrections based on signals.
         
-        # Step 1: Detect what types of obfuscation are present
+        Args:
+            text: Input text to analyze
+            language: Language hint (default: 'unknown')
+            use_fuzzy: Enable fuzzy matching in deobfuscation
+            
+        Returns:
+            dict with original, deobfuscated, detection results, and types
+        """
+        # STEP 1: Detect obfuscation patterns (global level)
         detection_result = self.detector.analyze(text, language)
         signals = detection_result.get('taglish_signals', {})
         
-        # Step 2: Deobfuscate with knowledge of what was detected
+        # STEP 2: Only trigger deobfuscator if obfuscation was detected
         if detection_result.get('isObfuscated'):
-            deobfuscated = self._deobfuscate(text, signals, use_fuzzy=use_fuzzy)
+            deobfuscated = self._deobfuscate(text, use_fuzzy=use_fuzzy)
         else:
             deobfuscated = text
+        
+        final_output = ' '.join(final_output.split())
         
         return {
             'original': text,
@@ -32,10 +46,11 @@ class AnalysisService:
         }
     
     def _get_obfuscation_types(self, signals: dict) -> list:
-        """Extract which types of obfuscation were detected"""
+        """Extract detected obfuscation types from signals"""
         types = []
-        if signals.get('netspeak'):
-            types.append('netspeak')
+        
+        if signals.get('abbreviation'):
+            types.append('abbreviation')
         if signals.get('leetspeak'):
             types.append('leetspeak')
         if signals.get('character_duplication'):
@@ -44,10 +59,44 @@ class AnalysisService:
             types.append('vowel_omission')
         if signals.get('morphology'):
             types.append('morphology')
+        
         return types
     
-    def _deobfuscate(self, text: str, signals: dict, use_fuzzy: bool = True) -> str:
-        """Deobfuscate with awareness of detected patterns"""
+    def _get_token_signals(self, token: str) -> dict:
+        """
+        Detect which obfuscation patterns apply to THIS specific token.
+        Returns dict of signals for signal-driven deobfuscation.
+        
+        Args:
+            token: Single token to analyze
+            
+        Returns:
+            dict with per-token detection signals
+        """
+        token_clean = token.lower().strip('.,!?;:()[]{}"\'-')
+        
+        signals = {
+            'abbreviation': self.detector.abbreviation.detect_single(token_clean),
+            'leetspeak': self.detector.leetspeak.detect(token_clean),
+            'character_duplication': self.detector.char_duplication.detect(token_clean),
+            'vowel_omission': self.detector.vowel_omission.detect(token_clean),
+            'morphology': self.detector.morphology.detect(token_clean)
+        }
+        
+        return signals
+    
+    def _deobfuscate(self, text: str, use_fuzzy: bool = True) -> str:
+        """
+        Deobfuscate text with signal-driven approach.
+        Each token's corrections are guided by its detected signals.
+        
+        Args:
+            text: Text to deobfuscate
+            use_fuzzy: Enable fuzzy matching
+            
+        Returns:
+            Deobfuscated text
+        """
         normalized = normalize_input(text)
         tokens = word_tokenize(normalized)
         deobfuscated_tokens = []
@@ -55,38 +104,21 @@ class AnalysisService:
         for token in tokens:
             if not token or token.isspace():
                 continue
+            
+            try:
+                # Get per-token detection signals
+                token_signals = self._get_token_signals(token)
                 
-            token_obf_type = self._get_token_obfuscation_type(token)
-            fixed_token = self.deobfuscator.deobfuscate(
-                token, 
-                use_fuzzy=use_fuzzy,
-                obf_type=token_obf_type
-            )
-            deobfuscated_tokens.append(fixed_token)
+                # Deobfuscate based on detected signals
+                fixed_token = self.deobfuscator.deobfuscate(
+                    token,
+                    use_fuzzy=use_fuzzy,
+                    signals=token_signals  # ← Pass signals, not obf_type
+                )
+                deobfuscated_tokens.append(fixed_token)
+            
+            except Exception as e:
+                print(f"[WARNING] Deobfuscation failed for '{token}': {e}")
+                deobfuscated_tokens.append(token)
         
-        return " ".join(deobfuscated_tokens)  
-    
-    def _get_token_obfuscation_type(self, token: str) -> str:
-        """Identify what type of obfuscation this token contains"""
-        # Check in priority order: netspeak > leet > duplication > vowel omission > morphology
-        token_clean = token.lower().strip('.,!?;:()[]{}"\'-')
-        
-        # Netspeak first (most specific - exact dictionary match)
-        if self.detector.netspeak.detect(token_clean):
-            return 'netspeak'
-        
-        # Then obvious obfuscations
-        if self.detector.leet.detect(token_clean):
-            return 'leetspeak'
-        
-        if self.detector.duplication.detect(token_clean):
-            return 'character_duplication'
-        
-        if self.detector.vowel.detect(token_clean):
-            return 'vowel_omission'
-        
-        # Morphology last (broadest match)
-        if self.detector.morph.detect(token_clean):
-            return 'morphology'
-        
-        return 'unknown'
+        return " ".join(deobfuscated_tokens)

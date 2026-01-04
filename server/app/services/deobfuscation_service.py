@@ -1,20 +1,26 @@
-import re
 from .dictionary_service import cached_dictionaries, get_filipino_words, get_english_words
 from .fuzzy_matching_service import FuzzyMatcher
+import re
 
 class DeobfuscationService:  
     def __init__(self):
         leet_obj = cached_dictionaries.get('leetspeak_map')
         self.leet_data = leet_obj.data if leet_obj else {}
         
-        net_obj = cached_dictionaries.get('netspeak_patterns')
-        self.netspeak_data = net_obj.data if net_obj else {}
+        abbrev_obj = cached_dictionaries.get('netspeak_patterns')
+        self.abbrev_data = abbrev_obj.data if abbrev_obj else {}
         
         protected_obj = cached_dictionaries.get('english_protected_words')
         self.protected_data = protected_obj.data if protected_obj else {}
         
+        morph_obj = cached_dictionaries.get('morphology_patterns')
+        morph_data = morph_obj.data if morph_obj else {}
+        self.morph_corrections_data = morph_data.get('morphological_corrections', {})
+
+        
         self._build_leet_map()
-        self._build_netspeak_map()
+        self._build_abbreviation_map()
+        self._build_morpho_corrections_map()
         self._build_primary_dict()
         self._build_secondary_dict()
         self._build_tertiary_dict()
@@ -26,77 +32,57 @@ class DeobfuscationService:
         
         self.fuzzy_matcher = FuzzyMatcher(threshold=75)
         
-        self._log_initialization()
     
     def _build_leet_map(self) -> None:
         self.leet_map = {}
+
         if self.leet_data and "character_substitutions" in self.leet_data:
             for char, subs in self.leet_data["character_substitutions"].items():
                 for sub in (subs if isinstance(subs, list) else [subs]):
                     self.leet_map[sub.lower()] = char.lower()
     
-    def _build_netspeak_map(self) -> None:
-        self.netspeak_map = {}
-        
-        if not self.netspeak_data or 'filipino_netspeak' not in self.netspeak_data:
+    def _build_abbreviation_map(self) -> None:
+        """Build mapping of abbreviations to their full forms."""
+        self.abbreviation_map = {}
+
+        if not self.abbrev_data or 'filipino_netspeak' not in self.abbrev_data:
             return
         
-        ns = self.netspeak_data['filipino_netspeak']
+        ns = self.abbrev_data['filipino_netspeak']
         
-        acronyms = ns.get('acronyms', {})
-        for full_form, abbrevs in acronyms.items():
-            full_lower = full_form.lower()
-            if isinstance(abbrevs, list):
-                for abbrev in abbrevs:
-                    self.netspeak_map[abbrev.lower()] = full_lower
-            elif isinstance(abbrevs, str):
-                self.netspeak_map[abbrevs.lower()] = full_lower
+        for key in ['acronyms', 'filipino_shortcuts', 'common_phrases', 'common_slang', 'filipino_english']:
+            data = ns.get(key, {})
+            for full_form, variations in data.items():
+                full_lower = full_form.lower()
+                if isinstance(variations, list):
+                    for var in variations:
+                        if isinstance(var, str):
+                            self.abbreviation_map[var.lower()] = full_lower
+                elif isinstance(variations, str):
+                    self.abbreviation_map[variations.lower()] = full_lower
+    
+    def _build_morpho_corrections_map(self) -> None:
+        self.morpho_corrections = {}
         
-        shortcuts = ns.get('filipino_shortcuts', {})
-        for full_word, variations in shortcuts.items():
-            full_lower = full_word.lower()
-            if isinstance(variations, list):
-                for var in variations:
-                    self.netspeak_map[var.lower()] = full_lower
-            elif isinstance(variations, str):
-                self.netspeak_map[variations.lower()] = full_lower
+        if not self.morph_corrections_data:
+            return
         
-        common_phrases = ns.get('common_phrases', {})
-        for standard_phrase, variations in common_phrases.items():
-            standard_lower = standard_phrase.lower()
-            if isinstance(variations, list):
-                for var in variations:
-                    self.netspeak_map[var.lower()] = standard_lower
-            elif isinstance(variations, str):
-                self.netspeak_map[variations.lower()] = standard_lower
-        
-        slang = ns.get('common_slang', {})
-        for standard_form, variations in slang.items():
-            standard_lower = standard_form.lower()
-            if isinstance(variations, list):
-                for var in variations:
-                    if isinstance(var, str):
-                        self.netspeak_map[var.lower()] = standard_lower
-            elif isinstance(variations, str):
-                self.netspeak_map[variations.lower()] = standard_lower
-        
-        filipino_english = ns.get('filipino_english', {})
-        for standard_form, variations in filipino_english.items():
-            standard_lower = standard_form.lower()
-            if isinstance(variations, list):
-                for var in variations:
-                    if isinstance(var, str):
-                        self.netspeak_map[var.lower()] = standard_lower
-            elif isinstance(variations, str):
-                self.netspeak_map[variations.lower()] = standard_lower
+        for correct_form, incorrect_forms in self.morph_corrections_data.items():
+            if isinstance(incorrect_forms, list):
+                for incorrect in incorrect_forms:
+                    self.morpho_corrections[incorrect.lower()] = correct_form.lower()
+            else:
+                self.morpho_corrections[str(incorrect_forms).lower()] = correct_form.lower()
     
     def _build_primary_dict(self) -> None:
         self.primary_dict = set()
-        self.primary_dict.update(self.netspeak_map.values())
+        self.primary_dict.update(self.abbreviation_map.values())
         
         if isinstance(self.leet_data, dict):
-            leet_examples = self.leet_data.get("filipino_leet_examples", {})
+            leet_examples = self.leet_data.get("filipinish_leet_examples", {})
             self.primary_dict.update(leet_examples.keys())
+        
+        self.primary_dict.update(self.morpho_corrections.values())
     
     def _build_secondary_dict(self) -> None:
         self.secondary_dict = set()
@@ -141,15 +127,6 @@ class DeobfuscationService:
         if 'words' in special_cases:
             self.protected_words.update(w.lower() for w in special_cases['words'])
     
-    def _log_initialization(self) -> None:
-        print(f"[DEBUG] DeobfuscationService loaded:")
-        print(f"  - {len(self.netspeak_map)} netspeak mappings")
-        print(f"  - {len(self.primary_dict)} words in PRIMARY dictionary")
-        print(f"  - {len(self.secondary_dict)} words in SECONDARY dictionary (Filipino)")
-        print(f"  - {len(self.tertiary_dict)} words in TERTIARY dictionary (English)")
-        print(f"  - {len(self.protected_words)} protected English words")
-        print(f"  - Fuzzy matcher threshold: {self.fuzzy_matcher.threshold}")
-    
     def _is_protected_word(self, word: str) -> bool:
         return word.lower() in self.protected_words
     
@@ -157,8 +134,7 @@ class DeobfuscationService:
         return "".join(self.leet_map.get(c, c) for c in token)
     
     def _normalize_duplication(self, token: str) -> str:
-        common_doubles = set("lsmnor")
-        
+        """Normalize repeated characters (reduce 3+ consecutive chars to 1)."""
         if len(token) < 2:
             return token
         
@@ -172,31 +148,15 @@ class DeobfuscationService:
             else:
                 consecutive_count = 1
             
-            max_allowed = 2 if char in common_doubles else 1
-            
-            if consecutive_count <= max_allowed:
+            if consecutive_count <= 1:
                 output.append(char)
             
             last_char = char
         
         return "".join(output)
     
-    def _has_obvious_obfuscation(self, token: str) -> bool:
-        token_lower = token.lower()
-        leet_chars = ['0', '1', '3', '4', '5', '7', '8', '@', '$']
-        has_leet = any(c in token_lower for c in leet_chars)
-        
-        has_excessive_dup = False
-        for i in range(len(token_lower) - 2):
-            if token_lower[i] == token_lower[i+1] == token_lower[i+2]:
-                if token_lower[i] not in 'ls':
-                    has_excessive_dup = True
-                    break
-        
-        return has_leet or has_excessive_dup
-    
     def _try_vowel_insertion(self, token: str) -> list:
-        """Try inserting vowels at each position to find valid words"""
+        """Try inserting vowels at each position and return valid candidates."""
         vowels = 'aeiou'
         candidates = []
         
@@ -208,10 +168,25 @@ class DeobfuscationService:
         
         return candidates
     
-    def deobfuscate(self, token: str, use_fuzzy: bool = True, obf_type: str = 'unknown') -> str:
+    
+    def deobfuscate(self, token: str, use_fuzzy: bool = True, signals: dict = None) -> str:
+        """
+        Deobfuscate a single token based on detected signals.
+        
+        Args:
+            token: The token to deobfuscate
+            use_fuzzy: Whether to use fuzzy matching as fallback
+            signals: Detected obfuscation signals from DetectionAutomata
+            
+        Returns:
+            Deobfuscated token or original if no correction found
+        """
         if not token:
             return token
         
+        signals = signals or {}
+        
+        # Extract prefix/suffix (punctuation, brackets, etc.)
         match = re.match(r"^([(\[{]*)([\w@$|€]+)([!?.,;:)\]}]*)$", token)
         if not match:
             return token
@@ -223,78 +198,54 @@ class DeobfuscationService:
         
         core_lower = core_word.lower()
         
-        # DEBUG: Check specific problematic words
-        if core_lower in ['or', 'of', 'in', 'at', 'pinas']:
-            print(f"[DEBUG] Token '{core_lower}':")
-            print(f"  - In primary? {core_lower in self.primary_dict}")
-            print(f"  - In secondary? {core_lower in self.secondary_dict}")
-            print(f"  - In tertiary? {core_lower in self.tertiary_dict}")
-            print(f"  - Is protected? {self._is_protected_word(core_lower)}")
-        
-        # GUARD: Protected words never change
+        # Protected words never change
         if self._is_protected_word(core_lower):
             return token
         
-        # Step 1: Netspeak lookup
-        if core_lower in self.netspeak_map:
-            return prefix + self.netspeak_map[core_lower] + suffix
+        # STEP 1: Check abbreviation map (exact match - highest confidence)
+        if core_lower in self.abbreviation_map:
+            return prefix + self.abbreviation_map[core_lower] + suffix
         
-        # Step 2: Check primary and secondary dictionaries
-        if core_lower in self.primary_dict or core_lower in self.secondary_dict:
+        # STEP 2: Check if already valid word in any dictionary
+        if core_lower in self.primary_dict or core_lower in self.secondary_dict or core_lower in self.tertiary_dict:
             return prefix + core_lower + suffix
         
-        # Step 2.5: Check tertiary (English) - accept ALL English words
-        # This prevents "or" → "oro", "of" → wrong match, etc.
-        if core_lower in self.tertiary_dict:
-            return prefix + core_lower + suffix
-        
-        # Step 3: Apply transformations
+        # STEP 3: Apply ALL transformations based on detected signals
+        # Order: most destructive first, validate after each transformation
         transformed = core_lower
         
-        if obf_type in ['leetspeak', 'unknown']:
-            transformed = self._reverse_leetspeak(transformed)
-        
-        if obf_type in ['character_duplication', 'unknown']:
-            transformed = self._normalize_duplication(transformed)
-        
-        # Step 3.5: Try vowel insertion (for vowel omission like ganya -> ganyan)
-        if obf_type in ['vowel_omission', 'morphology', 'unknown']:
-            vowel_candidates = self._try_vowel_insertion(transformed)
-            if vowel_candidates:
-                print(f"[DEBUG] Vowel insertion: '{transformed}' -> '{vowel_candidates[0]}'")
-                return prefix + vowel_candidates[0] + suffix
-        
-        # Step 4: Check if transformation created valid word
-        if transformed != core_lower:
-            if transformed in self.netspeak_map:
-                return prefix + self.netspeak_map[transformed] + suffix
-            
-            if transformed in self.primary_dict or transformed in self.secondary_dict:
+        # Morphological corrections (most specific)
+        if signals.get('morphology') and transformed in self.morpho_corrections:
+            transformed = self.morpho_corrections[transformed]
+            if self._is_valid_word(transformed):
                 return prefix + transformed + suffix
         
-        # Step 5: Fuzzy matching
-        # Only try fuzzy if word is NOT already valid somewhere
-        is_already_valid = (
-            transformed in self.primary_dict or 
-            transformed in self.secondary_dict or
-            transformed in self.tertiary_dict  # Accept any English word, not just protected
-        )
+        # Leetspeak (obvious visual substitutions)
+        if signals.get('leetspeak'):
+            transformed = self._reverse_leetspeak(transformed)
+            if self._is_valid_word(transformed):
+                return prefix + transformed + suffix
         
-        if is_already_valid:
+        # Character duplication (spacing issues)
+        if signals.get('char_duplication'):
+            transformed = self._normalize_duplication(transformed)
+            if self._is_valid_word(transformed):
+                return prefix + transformed + suffix
+        
+        # Vowel omission (requires guessing - last resort)
+        if signals.get('vowel_omission'):
+            vowel_candidates = self._try_vowel_insertion(transformed)
+            if vowel_candidates:
+                transformed = vowel_candidates[0]
+                if self._is_valid_word(transformed):
+                    return prefix + transformed + suffix
+        
+        # STEP 4: Final validation after all transformations
+        if self._is_valid_word(transformed):
             return prefix + transformed + suffix
         
-        # Trigger fuzzy if:
-        # 1. Has obvious obfuscation (leetspeak/duplication), OR
-        # 2. Short word (3-6 chars) AND not in any dictionary
-        is_short_unknown = (3 <= len(transformed) <= 6)
-        
-        should_try_fuzzy = (
-            use_fuzzy and 
-            len(transformed) >= 3 and
-            (self._has_obvious_obfuscation(core_lower) or is_short_unknown)
-        )
-        
-        if should_try_fuzzy:
+        # STEP 5: Fall back to fuzzy matching
+        if use_fuzzy and len(transformed) >= 3 and any(signals.values()):
             fuzzy_match = self.fuzzy_matcher.get_best_match(transformed, self.primary_dict_list)
             if fuzzy_match and fuzzy_match.get('confidence', 0) >= 0.75:
                 return prefix + fuzzy_match['word'] + suffix
@@ -303,13 +254,31 @@ class DeobfuscationService:
             if fuzzy_match and fuzzy_match.get('confidence', 0) >= 0.75:
                 return prefix + fuzzy_match['word'] + suffix
         
-        # Return transformed or original
+        # STEP 6: Return transformed or original
         if transformed != core_lower:
             return prefix + transformed + suffix
         
         return token
     
+    def _is_valid_word(self, word: str) -> bool:
+        """Check if word exists in any dictionary."""
+        return (
+            word in self.primary_dict or
+            word in self.secondary_dict or
+            word in self.tertiary_dict
+        )
+    
     def deobfuscate_text(self, text: str, use_fuzzy: bool = True) -> str:
+        """
+        Deobfuscate entire text by tokenizing and deobfuscating each token.
+        
+        Args:
+            text: Input text
+            use_fuzzy: Whether to use fuzzy matching
+            
+        Returns:
+            Deobfuscated text
+        """
         from .preprocessing_service import word_tokenize, normalize_input
         
         if not text:
@@ -319,4 +288,4 @@ class DeobfuscationService:
         tokens = word_tokenize(normalized)
         deobfuscated_tokens = [self.deobfuscate(token, use_fuzzy=use_fuzzy) for token in tokens]
         
-        return " ".join(deobfuscated_tokens)  
+        return " ".join(deobfuscated_tokens)

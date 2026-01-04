@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
 from app.services.detection_service import DetectionService
 from app.services.deobfuscation_service import DeobfuscationService
-from app.services.analysis_service import AnalysisService
 from app.services.translation_service import translate_to_clean_text
+from app.services.preprocessing_service import word_tokenize, normalize_input
 
 api_bp = Blueprint('api', __name__)
 
@@ -81,17 +81,56 @@ def analyze_full():
         language = data.get('language', 'unknown')
         use_fuzzy = data.get('use_fuzzy', True)
         
-        # Step 1: Analyze and deobfuscate
-        analysis_service = AnalysisService()
-        result = analysis_service.analyze(text, language, use_fuzzy)
+        # Step 1: Detect obfuscation signals
+        detector = DetectionService()
+        analysis = detector.analyze(text, language)
         
-        # Step 2: Translate deobfuscated text to clean final output
-        from app.services.translation_service import translate_to_clean_text
-        result['deobfuscated'] = translate_to_clean_text(result['deobfuscated'])
+        print(f"\n[DEBUG] Input: {text[:50]}...")
+        print(f"[DEBUG] Detected Signals: {analysis['detected_signals']}")
+        print(f"[DEBUG] Is Obfuscated: {analysis['isObfuscated']}")
+        
+        # DEBUG: Check abbreviation detection
+        print(f"\n[DEBUG ABBREV]")
+        print(f"  Abbreviation map size: {len(detector.abbreviation.single_abbrevs)}")
+        print(f"  'btw' in abbrevs: {'btw' in detector.abbreviation.single_abbrevs}")
+        print(f"  'hbd' in abbrevs: {'hbd' in detector.abbreviation.single_abbrevs}")
+        print(f"  'omg' in abbrevs: {'omg' in detector.abbreviation.single_abbrevs}")
+
+        # Tokenize to see what tokens are being checked
+        normalized = normalize_input(text)
+        tokens = word_tokenize(normalized)
+        print(f"  First 10 tokens: {tokens[:10]}")
+
+        for token in tokens[:10]:
+            cleaned = token.lower().strip('.,!?;:()[]{}"\'-')
+            is_abbrev = detector.abbreviation.detect_single(cleaned)
+            print(f"    '{token}' -> '{cleaned}': {is_abbrev}")
+        
+        # Step 2: Deobfuscate with signals
+        deobfuscator = DeobfuscationService()
+        
+        # Tokenize and deobfuscate each token with its signals
+        normalized = normalize_input(text)
+        tokens = word_tokenize(normalized)
+        
+        deobfuscated_tokens = []
+        for token in tokens:
+            corrected = deobfuscator.deobfuscate(token, use_fuzzy=use_fuzzy, signals=analysis['detected_signals'])
+            deobfuscated_tokens.append(corrected)
+        
+        deobfuscated = " ".join(deobfuscated_tokens)
+        
+        print(f"[DEBUG] Deobfuscated: {deobfuscated[:50]}...\n")
+        
+        # Step 3: Translate to clean output
+        final_output = translate_to_clean_text(deobfuscated)
         
         return jsonify({
             'success': True,
-            **result
+            'original': text,
+            'deobfuscated': deobfuscated,
+            'final': final_output,
+            'analysis': analysis
         })
     except Exception as e:
         import traceback
