@@ -5,7 +5,17 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      colors: {
+        primary: {
+          DEFAULT: '#9333ea',
+          hover: '#7e22ce',
+        },
+      },
+    },
   },
   plugins: [],
 }

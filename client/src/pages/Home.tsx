@@ -2,6 +2,7 @@ import { useState } from 'react';
 import TextInput from '../components/TextInput';
 import ResultDisplay from '../components/ResultDisplay';
 import { analyzeText } from '../utils/api';
+import logo from '../assets/auto-decode-logo.png';
 
 interface AnalysisResult {
   original_text: string;
@@ -10,6 +11,11 @@ interface AnalysisResult {
   deciphered_text?: string;
   character_count: number;
   confidence?: number;
+  fuzzy_matches?: Array<{
+    original: string;
+    match: string;
+    score: number;
+  }>;
 }
 
 function Home() {
@@ -37,6 +43,7 @@ function Home() {
         obfuscation_percentage: analysisResult.obfuscation_percentage,
         deciphered_text: analysisResult.deciphered_text,
         character_count: analysisResult.character_count,
+        fuzzy_matches: analysisResult.fuzzy_matches,
       });
     } catch (err) {
       setError('Failed to analyze text. Please try again.');
@@ -53,48 +60,46 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen" style={{ backgroundColor: '#f9fafb' }}>
+      <div className="container mx-auto pt-16 px-8 pb-8 max-w-5xl">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-indigo-900 mb-2">
-            Taglish Obfuscation Detector
-          </h1>
-          <p className="text-lg text-gray-600">
-            Finite Automata-based Detection & Deobfuscation System
+        <div className="mb-10">
+          <div className="mb-3 flex justify-center">
+            <img src={logo} alt="Auto Decode Logo" className="h-16" />
+          </div>
+          <p className="text-center text-sm text-gray-500">
+            Decoding Filipino Netspeak: Finite Automata for Taglish Obfuscation Detection
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex rounded-lg shadow-sm">
-            <button
-              onClick={() => setActiveTab('detector')}
-              className={`px-8 py-3 text-lg font-semibold rounded-l-lg transition-colors ${
-                activeTab === 'detector'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Detector
-            </button>
-            <button
-              onClick={() => setActiveTab('about')}
-              className={`px-8 py-3 text-lg font-semibold rounded-r-lg transition-colors ${
-                activeTab === 'about'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              About
-            </button>
-          </div>
+        <div className="flex gap-0 mb-8 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('detector')}
+            className={`px-8 py-4 text-base font-semibold transition-colors border-b-2 ${
+              activeTab === 'detector'
+                ? 'text-primary border-primary'
+                : 'text-gray-500 border-transparent hover:text-gray-700'
+            }`}
+          >
+            Detector
+          </button>
+          <button
+            onClick={() => setActiveTab('about')}
+            className={`px-8 py-4 text-base font-semibold transition-colors border-b-2 ${
+              activeTab === 'about'
+                ? 'text-primary border-primary'
+                : 'text-gray-500 border-transparent hover:text-gray-700'
+            }`}
+          >
+            About
+          </button>
         </div>
 
         {/* Content */}
         {activeTab === 'detector' ? (
-          <div className="max-w-5xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
+          <div className="space-y-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-8">
               <TextInput
                 value={text}
                 onChange={setText}
@@ -104,7 +109,7 @@ function Home() {
               />
               
               {error && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
                   {error}
                 </div>
               )}
@@ -115,49 +120,76 @@ function Home() {
             )}
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-3xl font-bold text-indigo-900 mb-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-8">
               About This Project
             </h2>
-            <div className="prose prose-lg max-w-none text-gray-700">
-              <p className="mb-4">
-                The <strong>Taglish Obfuscation Detector</strong> is an advanced system designed to 
+            <div className="space-y-8 text-base text-gray-600">
+              <p className="leading-relaxed">
+                The <strong className="text-gray-900">Taglish Obfuscation Detector</strong> is an advanced system designed to 
                 identify and decipher obfuscated Taglish (Tagalog-English) text using finite automata 
-                theory and natural language processing techniques.
+                theory, sophisticated fuzzy matching algorithms, and natural language processing techniques.
               </p>
               
-              <h3 className="text-2xl font-semibold text-indigo-800 mt-6 mb-3">
-                Key Features
-              </h3>
-              <ul className="list-disc list-inside space-y-2 mb-4">
-                <li>Real-time obfuscation detection using pattern recognition</li>
-                <li>Automatic deciphering of leetspeak and character substitutions</li>
-                <li>Duplication normalization (heeeey → hey)</li>
-                <li>Character-level finite automata processing</li>
-                <li>Fuzzy matching for intelligent word correction</li>
-                <li>Support for common obfuscation patterns (3→e, 1→i, 0→o, etc.)</li>
-              </ul>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Key Features
+                </h3>
+                <ul className="list-disc list-outside space-y-2 text-gray-600 ml-6">
+                  <li>Real-time obfuscation detection with accurate percentage calculation</li>
+                  <li>Automatic deciphering of leetspeak and character substitutions</li>
+                  <li>Advanced fuzzy matching with multi-factor scoring algorithm</li>
+                  <li>Word-by-word deobfuscation visualization with confidence scores</li>
+                  <li>Comprehensive dictionary: 234,499 words (Filipino + English)</li>
+                  <li>Duplication normalization (heeeey → hey)</li>
+                  <li>Support for common obfuscation patterns (3→e, 1→i, 0→o, 4→a, 5→s, etc.)</li>
+                  <li>Character-level finite automata processing</li>
+                </ul>
+              </div>
 
-              <h3 className="text-2xl font-semibold text-indigo-800 mt-6 mb-3">
-                How It Works
-              </h3>
-              <ol className="list-decimal list-inside space-y-2 mb-4">
-                <li><strong>Detection:</strong> Identifies 5 types of obfuscation patterns using NFAs</li>
-                <li><strong>Transformation:</strong> Reverses leetspeak and normalizes character duplication</li>
-                <li><strong>Dictionary Lookup:</strong> Checks against netspeak dictionary</li>
-                <li><strong>Fuzzy Matching:</strong> Finds closest valid word for unrecognized tokens</li>
-                <li><strong>Output:</strong> Returns original and deobfuscated text with confidence</li>
-              </ol>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  How It Works
+                </h3>
+                <ol className="list-decimal list-outside space-y-2 text-gray-600 ml-6">
+                  <li><strong className="text-gray-900">Detection:</strong> Identifies obfuscation patterns using NFAs and pattern matching</li>
+                  <li><strong className="text-gray-900">Transformation:</strong> Reverses leetspeak and normalizes character duplication</li>
+                  <li><strong className="text-gray-900">Dictionary Lookup:</strong> Checks against comprehensive Filipino and English dictionaries</li>
+                  <li><strong className="text-gray-900">Fuzzy Matching:</strong> Uses multi-factor scoring (Levenshtein distance, length penalties/bonuses, prefix matching) to find the best word match</li>
+                  <li><strong className="text-gray-900">Visualization:</strong> Displays word-by-word transformations with confidence scores</li>
+                  <li><strong className="text-gray-900">Output:</strong> Returns original text, deobfuscated text, obfuscation percentage, and detailed word matches</li>
+                </ol>
+              </div>
 
-              <h3 className="text-2xl font-semibold text-indigo-800 mt-6 mb-3">
-                Technology Stack
-              </h3>
-              <ul className="list-disc list-inside space-y-2">
-                <li><strong>Frontend:</strong> React + TypeScript + Vite + TailwindCSS</li>
-                <li><strong>Backend:</strong> Python Flask with finite automata implementation</li>
-                <li><strong>Theory:</strong> Finite State Machines & Pattern Matching</li>
-                <li><strong>NLP:</strong> Fuzzy string matching with RapidFuzz</li>
-              </ul>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Technology Stack
+                </h3>
+                <ul className="list-disc list-outside space-y-2 text-gray-600 ml-6">
+                  <li><strong className="text-gray-900">Frontend:</strong> React + TypeScript + Vite + TailwindCSS</li>
+                  <li><strong className="text-gray-900">Backend:</strong> Python Flask with finite automata implementation</li>
+                  <li><strong className="text-gray-900">Theory:</strong> Finite State Machines & Pattern Matching</li>
+                  <li><strong className="text-gray-900">NLP Libraries:</strong> RapidFuzz (fuzzy matching with Levenshtein distance)</li>
+                  <li><strong className="text-gray-900">Dictionaries:</strong> Custom Filipino/Taglish netspeak patterns + English word corpus (JSON-based)</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Fuzzy Matching Algorithm
+                </h3>
+                <p className="text-gray-600 mb-4 leading-relaxed">
+                  Our sophisticated multi-factor scoring system ensures accurate word matching:
+                </p>
+                <ul className="list-disc list-outside space-y-2 text-gray-600 ml-6">
+                  <li><strong className="text-gray-900">Base Score:</strong> Levenshtein distance similarity</li>
+                  <li><strong className="text-gray-900">Length Penalty:</strong> -5% per missing character (prevents truncated matches)</li>
+                  <li><strong className="text-gray-900">Length Bonus:</strong> +4% per character after 3 (favors complete words)</li>
+                  <li><strong className="text-gray-900">Prefix Matching:</strong> +3% per matching character in first 3 positions</li>
+                  <li><strong className="text-gray-900">Exact Length Match:</strong> +2% bonus when lengths match perfectly</li>
+                  <li><strong className="text-gray-900">Dynamic Thresholds:</strong> 75% for 4+ char words, 60% for 3-char words</li>
+                </ul>
+              </div>
             </div>
           </div>
         )}

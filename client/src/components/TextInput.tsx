@@ -11,7 +11,7 @@ export default function TextInput({ value, onChange, onAnalyze, onClear, isAnaly
 
   return (
     <div>
-      <label className="block text-xl font-semibold text-gray-700 mb-3">
+      <label className="block text-base font-medium text-gray-700 mb-4">
         Enter Taglish Obfuscated Text
       </label>
       
@@ -19,18 +19,23 @@ export default function TextInput({ value, onChange, onAnalyze, onClear, isAnaly
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && value.trim()) {
+              onAnalyze();
+            }
+          }}
           placeholder="Type or paste your text here... (e.g., 'h3ll0 w0r1d', 'k4m5t4 n4 p0')"
-          className="w-full h-48 p-4 text-lg border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"
+          className="w-full h-48 p-5 text-base border border-gray-200 rounded-md focus:border-gray-300 focus:ring-0 outline-none transition-colors resize-none text-gray-900 placeholder-gray-400 bg-white"
           disabled={isAnalyzing}
         />
         
         {value && (
           <button
             onClick={onClear}
-            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-600 transition-colors rounded"
             title="Clear text"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -39,17 +44,18 @@ export default function TextInput({ value, onChange, onAnalyze, onClear, isAnaly
 
       <div className="flex items-center justify-between mt-4">
         <span className="text-sm text-gray-500">
-          {charCount} character{charCount !== 1 ? 's' : ''}
+          {charCount}/500 characters
         </span>
         
         <button
           onClick={onAnalyze}
-          disabled={isAnalyzing || !value.trim()}
-          className="flex items-center gap-2 px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          disabled={!value.trim() && !isAnalyzing}
+          style={{
+            backgroundColor: (value.trim() || isAnalyzing) ? '#9333ea' : '#e5e7eb',
+            color: (value.trim() || isAnalyzing) ? '#ffffff' : '#9ca3af'
+          }}
+          className="px-8 py-3 font-medium rounded-full transition-colors text-base disabled:cursor-not-allowed"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
           {isAnalyzing ? 'Analyzing...' : 'Analyze'}
         </button>
       </div>
