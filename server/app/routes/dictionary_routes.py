@@ -73,7 +73,7 @@ def get_leetspeak():
         'endpoint': 'leetspeak',
         'data': filtered_data
     })
-
+"""
 @dictionary_bp.route('/api/morphology', methods=['GET'])
 def get_morphology():
     model = cached_dictionaries.get('morphology_patterns')
@@ -89,7 +89,7 @@ def get_morphology():
         'endpoint': 'morphology',
         'data': filtered_data
     })
-
+"""
 @dictionary_bp.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({

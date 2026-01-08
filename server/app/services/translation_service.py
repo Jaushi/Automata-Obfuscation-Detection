@@ -1,51 +1,69 @@
-from .preprocessing_service import normalize_input
-from .deobfuscation_service import DeobfuscationService
-import string
-import re
+from typing import Union
 
-def word_tokenize_preserve_hyphens(text: str) -> list:
-    """Tokenize while preserving hyphens within words and attached punctuation"""
-    # Match: word + optional attached trailing punctuation, OR standalone punctuation
-    tokens = re.findall(r"[(\[{]*[a-z0-9@!$|€*-]+[?.,;:!)\]}]*", text)
-    return [t for t in tokens if t.strip()]
 
 def _join(tokens: list[str]) -> str:
-    """Join tokens intelligently without adding unnecessary spaces."""
+    """
+    Join tokens with proper spacing rules.
+    Rules:
+    - No space before closing punctuation: ! ? . , ; :
+    - No space after opening punctuation: ( [ { " '
+    - Normal space between all other tokens
+    
+    Args:
+        tokens: List of tokens to join
+    Examples:
+        ["hello", ",", "world", "!"] → "hello, world!"
+        ["(", "test", ")"] → "(test)"
+    """
+    if not tokens:
+        return ""
+    
     result = ""
-    opening_brackets = {'(', '[', '{', '"', "'"}
-    closing_brackets = {')', ']', '}', '"', "'", '.', ',', '!', '?', ';', ':'}
+    opening = {'(', '[', '{', '"', "'"}
+    closing = {')', ']', '}', '"', "'", '.', ',', '!', '?', ';', ':'}
     
     for i, token in enumerate(tokens):
-        # Add space before token if needed
-        if i > 0:
-            prev_token = tokens[i-1]
-            # Don't add space if current is closing punct or previous is opening punct
-            if token not in closing_brackets and prev_token not in opening_brackets:
-                result += " "
+        # First token: no space
+        if i == 0:
+            result += token
+            continue
         
-        result += token
+        prev_token = tokens[i-1]
+        
+        # No space before closing punctuation
+        if token in closing:
+            result += token
+        # No space after opening punctuation
+        elif prev_token in opening:
+            result += token
+        # Normal space for everything else
+        else:
+            result += " " + token
     
     return result.strip()
 
-def translate_to_clean_text(deobfuscated_text: str) -> str:
-    """
-    Final step: Convert deobfuscated text into properly formatted clean text.
-    This handles punctuation spacing and final presentation.
-    Preserves hyphens within words (real-time stays as real-time).
-    """
-    tokens = word_tokenize_preserve_hyphens(deobfuscated_text)
-    return _join(tokens)
 
-def process_and_translate(text: str):
-    """Full pipeline: normalize → tokenize → deobfuscate → translate"""
-    # Normalize
-    clean = normalize_input(text)
+def translate_to_clean_text(input_data: Union[str, list[str]]) -> str:
+    """
+    Convert deobfuscated tokens/text into properly formatted clean text.
     
-    # Tokenize with hyphen preservation
-    tokens = word_tokenize_preserve_hyphens(clean)
+    This is the FINAL OUTPUT. Call this after deobfuscation.
     
-    # Deobfuscate
-    service = DeobfuscationService()
-    translated = [service.deobfuscate(t) for t in tokens]
+    Args:
+        input_data: Either a string (will be tokenized) or list of tokens
+        
+    Returns:
+        Properly formatted final text
+        
+    Examples:
+        "hello world" → "hello world"
+        ["hello", "world"] → "hello world"
+        ["hello", ",", "world", "!"] → "hello, world!"
+    """
+    # Handle both string and token list inputs
+    if isinstance(input_data, str):
+        tokens = input_data.split() if input_data.strip() else []
+    else:
+        tokens = input_data
     
-    return _join(translated)
+    return _join(tokens)

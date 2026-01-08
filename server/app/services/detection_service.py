@@ -10,8 +10,8 @@ class AutomatonState:
     def __init__(self, state_id: str, is_accepting: bool = False):
         self.state_id = state_id
         self.is_accepting = is_accepting
-        self.transitions: Dict[str, Set[str]] = {}  # char -> {next_state_ids}
-        self.epsilon_transitions: Set[str] = set()  # epsilon paths
+        self.transitions: Dict[str, Set[str]] = {}
+        self.epsilon_transitions: Set[str] = set()
     
     def __repr__(self):
         return f"State({self.state_id}, accepting={self.is_accepting})"
@@ -37,7 +37,7 @@ class NFA:
         self.initial_state = state_id
     
     def add_transition(self, from_state: str, symbols: str, to_state: str):
-        """Add transition(s) for given symbol(s). Auto-creates states if needed."""
+        """Add transition(s) for given symbol(s)."""
         if from_state not in self.states:
             self.add_state(from_state)
         if to_state not in self.states:
@@ -64,139 +64,117 @@ class NFA:
         
         return closure
     
-    def matches(self, text: str) -> bool:
-        """Check if text matches the automaton."""
+    def is_accepted(self, text: str) -> bool:
+        """Check if text is accepted by the NFA."""
         if not self.initial_state:
             return False
         
+        # Start with epsilon closure of initial state
         current_states = self._get_epsilon_closure({self.initial_state})
         
-        for char in text.lower():
+        # Process each character
+        for char in text:
             next_states: Set[str] = set()
             
+            # Find all possible transitions from current states
             for state in current_states:
                 if char in self.states[state].transitions:
                     next_states.update(self.states[state].transitions[char])
             
+            # No valid transitions = reject
             if not next_states:
                 return False
             
+            # Apply epsilon closure to next states
             current_states = self._get_epsilon_closure(next_states)
         
+        # Accept only if we END in an accepting state
         return any(self.states[s].is_accepting for s in current_states)
 
 
 class VowelOmissionDetector:
-    """
-    Detects words with 3+ consecutive consonants (vowel omission).
-    Improved to handle cases like 'dmatng' where vowels are interspersed.
-    Examples: txt, plz, thx, strng, dmatng, dmtng
-    """
+    """Detects words with 3+ consecutive consonants."""
     
     def __init__(self):
         self.vowels = "aeiou"
         self.consonants = "bcdfghjklmnpqrstvwxyz"
-        self.nfa = self._build_nfa()
+        self.nfa = self._build()
     
-    def _build_nfa(self) -> NFA:
+    def _build(self) -> NFA:
         nfa = NFA()
-        
         nfa.add_state("START")
         nfa.add_state("C1")
-        nfa.add_state("C2")
+        nfa.add_state("C2", is_accepting=True)
         nfa.add_state("C3_PLUS", is_accepting=True)
         nfa.set_initial_state("START")
         
-        # From START: vowel stays, consonant moves to C1
         nfa.add_transition("START", self.vowels, "START")
         nfa.add_transition("START", self.consonants, "C1")
-        
-        # From C1: consonant → C2, vowel stays in C1 (don't reset!)
+
         nfa.add_transition("C1", self.consonants, "C2")
-        nfa.add_transition("C1", self.vowels, "C1")
-        
-        # From C2: consonant → C3_PLUS (accepting), vowel stays in C2
+        nfa.add_transition("C1", self.vowels, "START")
+
         nfa.add_transition("C2", self.consonants, "C3_PLUS")
-        nfa.add_transition("C2", self.vowels, "C2")
+        nfa.add_transition("C2", self.vowels, "START")
         
-        # From C3_PLUS: consonant stays, vowel stays (both stay accepting)
         nfa.add_transition("C3_PLUS", self.consonants, "C3_PLUS")
-        nfa.add_transition("C3_PLUS", self.vowels, "C3_PLUS")
+        nfa.add_transition("C3_PLUS", self.vowels, "C3_PLUS") # absorbing accepting state
         
         return nfa
     
-    def detect(self, token: str) -> bool:
-        return self.nfa.matches(token)
+    def is_accepted(self, token: str) -> bool:
+        return self.nfa.is_accepted(token)
 
 
 class CharDuplicationDetector:
-    """
-    Detects words with 2+ or 3+ consecutive identical characters.
-    Examples: 
-    - 2+ duplicates: naggiba (gg), hello (ll)
-    - 3+ duplicates: hellooo, yesss, nooooo
-    """
+    """Detects words with 2+ consecutive identical characters."""
     
     def __init__(self, min_duplicates: int = 2):
-        """
-        Args:
-            min_duplicates: Minimum number of consecutive identical chars (2 or 3)
-        """
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
         self.min_duplicates = min_duplicates
-        self.nfa = self._build_nfa()
+        self.nfa = self._build()
     
-    def _build_nfa(self) -> NFA:
+    def _build(self) -> NFA:
         nfa = NFA()
         nfa.add_state("START")
+        nfa.add_state("DUP_FOUND", is_accepting=True)  #accepting state
         nfa.set_initial_state("START")
         
         for letter in self.alphabet:
-            state_once = f"{letter}_once"
-            state_twice = f"{letter}_twice"
-            state_thrice = f"{letter}_thrice"
-            
-            state_thrice = f"{letter}_thrice"
+            state_once = f"{letter}_1"
+            state_twice = f"{letter}_2"
             
             nfa.add_state(state_once)
-            nfa.add_state(state_twice, is_accepting=True)
-            nfa.add_state(state_thrice, is_accepting=True)
+            nfa.add_state(state_twice, is_accepting=True)  # 2+ duplicates = accepting
             
-            # Transitions for same letter
+            # Same letter transitions
             nfa.add_transition("START", letter, state_once)
             nfa.add_transition(state_once, letter, state_twice)
-            nfa.add_transition(state_twice, letter, state_thrice)
-            nfa.add_transition(state_thrice, letter, state_thrice)  # Stay in accepting state for 3+
+            nfa.add_transition(state_twice, letter, "DUP_FOUND")  # 3+ goes to DUP_FOUND
             
-            # Transitions to different letters (restart count)
+            # Different letter transitions (restart count)
             for other_letter in self.alphabet:
                 if other_letter != letter:
-                    nfa.add_transition(state_once, other_letter, f"{other_letter}_once")
-                    nfa.add_transition(state_twice, other_letter, f"{other_letter}_once")
-                    nfa.add_transition(state_thrice, other_letter, f"{other_letter}_once")
-        
+                    nfa.add_transition(state_once, other_letter, f"{other_letter}_1")
+                    nfa.add_transition(state_twice, other_letter, "DUP_FOUND")
+
+            nfa.add_transition("DUP_FOUND", self.alphabet, "DUP_FOUND")
         return nfa
     
-    def detect(self, token: str) -> bool:
-        """Returns True if token contains 2+ consecutive identical characters."""
-        letters_only = ''.join(c for c in token if c.isalpha())
-        result = self.nfa.matches(letters_only)
-        print(f"[DEBUG CharDup] token='{token}' -> letters_only='{letters_only}' -> result={result}")
-        return result
+    def is_accepted(self, token: str) -> bool:
+        return self.nfa.is_accepted(token)
+    
 
 class LeetspeakDetector:
-    """
-    Detects leetspeak/1337 speak patterns.
-    Examples: h3ll0, p4ssw0rd, l33t
-    """
+    """Detects leetspeak/1337 speak patterns."""
     
     def __init__(self, leet_data: Dict = None):
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
         self.leet_chars = self._extract_leet_chars(leet_data)
-        self.nfa = self._build_nfa()
+        self.nfa = self._build()
     
     def _extract_leet_chars(self, leet_data: Dict) -> str:
-        """Extract all leetspeak substitution symbols from config."""
+        """Extract all leetspeak substitution symbols"""
         chars = set()
         if leet_data and 'character_substitutions' in leet_data:
             for substitutions in leet_data['character_substitutions'].values():
@@ -206,280 +184,233 @@ class LeetspeakDetector:
                     chars.add(substitutions)
         return "".join(chars)
     
-    def _build_nfa(self) -> NFA:
+    def _build(self) -> NFA:
         nfa = NFA()
         
+        # States
         nfa.add_state("START")
-        nfa.add_state("NORMAL_WORD")
+        nfa.add_state("CHAR")
         nfa.add_state("LEET_FOUND", is_accepting=True)
         nfa.set_initial_state("START")
         
-        nfa.add_transition("START", self.alphabet, "NORMAL_WORD")
-        nfa.add_transition("START", self.leet_chars, "LEET_FOUND")
+        nfa.add_transition("START", self.alphabet, "CHAR")
+        nfa.add_transition("START", self.leet_chars, "CHAR")
+
+        nfa.add_transition("CHAR", self.alphabet, "CHAR")
+        nfa.add_transition("CHAR", self.leet_chars, "LEET_FOUND")
         
-        nfa.add_transition("NORMAL_WORD", self.alphabet, "NORMAL_WORD")
-        nfa.add_transition("NORMAL_WORD", self.leet_chars, "LEET_FOUND")
-        
-        nfa.add_transition("LEET_FOUND", self.alphabet + self.leet_chars, "LEET_FOUND")
+        nfa.add_transition("LEET_FOUND", self.alphabet, "LEET_FOUND")
+        nfa.add_transition("LEET_FOUND", self.leet_chars, "LEET_FOUND")
         
         return nfa
     
-    def detect(self, token: str) -> bool:
-        return self.nfa.matches(token)
+    def is_accepted(self, token: str) -> bool:
+        return self.nfa.is_accepted(token)
 
-class MorphologyDetector:
+class SymbolSeparationDetector:
     """
-    Detects Filipino morphological patterns using NFA.
-    Structure: [PREFIX] ROOT [SUFFIX]
-    Matches character-by-character through the pattern.
+    Detects symbol-separated obfuscation like k-m-u-s-t-a, h-e-l-l-o, h_3_l_l_0.
+    Pattern: letter/digit + (separator + letter/digit)+ with at least 2+ items separated.
     """
+    def __init__(self):
+        self.alphanumeric = "abcdefghijklmnopqrstuvwxyz0123456789"
+        self.separators = "-._|*"
+        self.nfa = self._build()
     
-    def __init__(self, morph_data: Dict = None):
-        morph_data = morph_data or {}
-        affixes = morph_data.get("affixes", {})
-        
-        self.prefixes = list(affixes.get("prefixes", []))
-        self.suffixes = list(affixes.get("suffixes", []))
-        self.min_root_length = morph_data.get("validation_rules", {}).get("min_root_after_prefix", 2)
-        
-        self.alphabet = "abcdefghijklmnopqrstuvwxyz"
-        self.nfa = self._build_nfa()
-    
-    def _extract_root(self, word: str) -> str:
-        """Extract root by removing prefix and suffix."""
-        w = word.lower()
-        
-        # Remove prefix
-        for prefix in self.prefixes:
-            if w.startswith(prefix):
-                w = w[len(prefix):]
-                break
-        
-        # Remove suffix
-        for suffix in self.suffixes:
-            if w.endswith(suffix):
-                w = w[:-len(suffix)]
-                break
-        
-        return w
-    
-    def _build_nfa(self) -> NFA:
-        """
-        Build NFA: [PREFIX] ROOT [SUFFIX]
-        Each part matches character-by-character.
-        """
+    def _build(self) -> NFA:
         nfa = NFA()
+        
+        # States
         nfa.add_state("START")
+        nfa.add_state("ALPHANUM")
+        nfa.add_state("SYMBOL")
+        nfa.add_state("MATCHED", is_accepting=True)
         nfa.set_initial_state("START")
         
-        # Path 1: PREFIX → ROOT (min_root_length chars) → SUFFIX
-        for prefix in self.prefixes:
-            # Build prefix character chain
-            prev_state = "START"
-            for idx, char in enumerate(prefix):
-                new_state = f"PFX_{prefix}_CH{idx}"
-                nfa.add_state(new_state)
-                nfa.add_transition(prev_state, char, new_state)
-                prev_state = new_state
-            
-            # After prefix: build root (minimum length)
-            root_start = f"PFX_{prefix}_ROOT_START"
-            nfa.add_state(root_start)
-            nfa.add_transition(prev_state, self.alphabet, root_start)
-            
-            # Build root chain (min_root_length characters)
-            root_chain = [root_start]
-            for i in range(1, self.min_root_length):
-                root_state = f"PFX_{prefix}_ROOT{i}"
-                nfa.add_state(root_state)
-                nfa.add_transition(root_chain[-1], self.alphabet, root_state)
-                root_chain.append(root_state)
-            
-            root_end = root_chain[-1]
-            
-            # After root, can continue with more root chars (optional)
-            nfa.add_transition(root_end, self.alphabet, root_end)
-            
-            # From root_end, match suffix (optional)
-            for suffix in self.suffixes:
-                prev_state = root_end
-                for idx, char in enumerate(suffix):
-                    new_state = f"PFX_{prefix}_SFX_{suffix}_CH{idx}"
-                    is_accepting = (idx == len(suffix) - 1)
-                    nfa.add_state(new_state, is_accepting=is_accepting)
-                    nfa.add_transition(prev_state, char, new_state)
-                    prev_state = new_state
-                
-                # Mark root_end as accepting too (prefix+root without suffix)
-                nfa.states[root_end].is_accepting = True
+
+        nfa.add_transition("START", self.separators, "SYMBOL")
+        nfa.add_transition("START", self.alphanumeric, "ALPHANUM")
+
+        nfa.add_transition("ALPHANUM", self.separators, "SYMBOL")
+        nfa.add_transition("SYMBOL", self.separators, "SYMBOL")
+        nfa.add_transition("SYMBOL", self.alphanumeric, "MATCHED")
         
-        # Path 2: ROOT (min_root_length chars) → SUFFIX
-        root_start = "ROOT_START"
-        nfa.add_state(root_start)
-        nfa.add_transition("START", self.alphabet, root_start)
-        
-        root_chain = [root_start]
-        for i in range(1, self.min_root_length):
-            root_state = f"ROOT{i}"
-            nfa.add_state(root_state)
-            nfa.add_transition(root_chain[-1], self.alphabet, root_state)
-            root_chain.append(root_state)
-        
-        root_end = root_chain[-1]
-        nfa.add_transition(root_end, self.alphabet, root_end)
-        
-        # From root_end, match suffix
-        for suffix in self.suffixes:
-            prev_state = root_end
-            for idx, char in enumerate(suffix):
-                new_state = f"SFX_{suffix}_CH{idx}"
-                is_accepting = (idx == len(suffix) - 1)
-                nfa.add_state(new_state, is_accepting=is_accepting)
-                nfa.add_transition(prev_state, char, new_state)
-                prev_state = new_state
+        nfa.add_transition("MATCHED", self.separators, "SYMBOL")
+        nfa.add_transition("MATCHED", self.alphanumeric, "MATCHED")
         
         return nfa
     
-    def detect(self, word: str, other_signals: dict = None) -> bool:
-        other_signals = other_signals or {}
-        word_lower = word.lower()
-        
-        # Check if word matches morphological pattern via NFA
-        has_morphological_affix = self.nfa.matches(word_lower)
-        print(f"[DEBUG MORPHOLOGY] '{word}' NFA match: {has_morphological_affix}")
-        
-        if not has_morphological_affix:
-            print(f"[DEBUG MORPHOLOGY] NFA returned False, skipping")
-            return False
-        
-        # Extract root
-        root = self._extract_root(word)
-        print(f"[DEBUG MORPHOLOGY] Extracted root: '{root}'")
-        
-        # Root must meet minimum length
-        if len(root) < self.min_root_length:
-            print(f"[DEBUG MORPHOLOGY] Root too short: {len(root)} < {self.min_root_length}")
-            return False
-        
-        # Only mark as morphology if root has OTHER obfuscation
-        has_other = any(other_signals.values())
-        print(f"[DEBUG MORPHOLOGY] Root has other obfuscation: {has_other}")
-        return has_other
+    def is_accepted(self, token: str) -> bool:
+        return self.nfa.is_accepted(token)
 
-class netspeakDetector:
-    """
-    Detects netspeaks and common shorthand.
-    Examples: u, ty, lol, omg, ty vm
-    """
+
+class NetspeakDetector:
+    """Detects single-word netspeaks and common shorthand."""
     
-    def __init__(self, abbrev_data: Dict = None):
-        self.alphabet = "abcdefghijklmnopqrstuvwxyz"
-        self.space = " "
-        
-        self.single_abbrevs, self.multi_abbrevs = self._extract_netspeaks(abbrev_data)
-        self.nfa = self._build_nfa()
+    def __init__(self, netspeak_data: Dict = None):
+        self.single_netspeak = self._extract_netspeaks(netspeak_data)
+        self.nfa = self._build()
     
-    def _extract_netspeaks(self, abbrev_data: Dict) -> tuple:
-        """Extract netspeaks from data dictionary."""
-        all_terms = set()
-        
-        if abbrev_data and "filipino_netspeak" in abbrev_data:
-            ns = abbrev_data["filipino_netspeak"]
-            categories = [
-                "filipino_shortcuts",
-                "acronyms",
-                "common_slang",
-                "filipino_english",
-                "common_phrases",
-            ]
+    def _extract_netspeaks(self, netspeak_data: Dict) -> set:
+        """Extract single-word netspeaks from dictionary."""
+        terms = set()
+        if netspeak_data and "filipino_netspeak" in netspeak_data:
+            ns = netspeak_data["filipino_netspeak"]
+            categories = ["filipino_shortcuts", "acronyms", "common_slang", 
+                         "filipino_english", "common_phrases"]
             
             for category in categories:
-                data = ns.get(category, {})
-                for root_word, netspeaks in data.items():
-                    all_terms.add(root_word.lower())
-                    
-                    if isinstance(netspeaks, list):
-                        for abbrev in netspeaks:
-                            all_terms.add(str(abbrev).lower())
-                    elif netspeaks:
-                        all_terms.add(str(netspeaks).lower())
+                for root_word, variants in ns.get(category, {}).items():
+                    terms.add(root_word.lower())
+                    if isinstance(variants, list):
+                        terms.update(str(v).lower() for v in variants)
+                    elif variants:
+                        terms.add(str(variants))
         
-        # Separate into single and multi-word
-        single_word = set()
-        multi_word = set()
-        
-        for term in all_terms:
-            term = term.strip()
-            if self.space in term:
-                multi_word.add(term)
-            elif 1 <= len(term) <= 6:  # Reasonable length for shortcuts
-                single_word.add(term)
-        
-        return single_word, multi_word
+        return {t.strip() for t in terms if " " not in t and 1 <= len(t) <= 6}
     
-    def _build_nfa(self) -> NFA:
+    def _build(self) -> NFA:
+        """Build NFA for single-word netspeak detection."""
         nfa = NFA()
         nfa.add_state("START")
         nfa.set_initial_state("START")
+
+        for netspeak in self.single_netspeak:
+            PREV_STATE = "START"
+
+            for idx, char in enumerate(netspeak):
+                NEW_STATE = f"NS_{netspeak}_{idx}"
+                is_accepting = (idx == len(netspeak) - 1)
+
+                nfa.add_state(NEW_STATE, is_accepting=is_accepting)
+                nfa.add_transition(PREV_STATE, char, NEW_STATE)
+                PREV_STATE = NEW_STATE
+
+        return nfa
+    
+    def is_accepted(self, token: str) -> bool:
+        return self.nfa.is_accepted(token) and token in self.single_netspeak
+
+
+class PhoneticDetector:
+    """Detects Filipino phonetic obfuscation patterns."""
+    
+    def __init__(self):
+        self.vowels = "aeiou"
+        self.consonants = "bcdfghjklmnpqrstvwxyz"
+        self.alphabet = self.vowels + self.consonants
         
-        # Build single-word netspeak paths
-        for abbrev in self.single_abbrevs:
-            prev_state = "START"
-            for idx, char in enumerate(abbrev):
-                new_state = f"ABBR_{abbrev}_CH{idx}"
-                is_accepting = (idx == len(abbrev) - 1)
-                nfa.add_state(new_state, is_accepting=is_accepting)
-                nfa.add_transition(prev_state, char, new_state)
-                prev_state = new_state
+        self.nfa_au = self._build_au_nfa()
+        self.nfa_f = self._build_f_nfa()
+        self.nfa_d = self._build_d_nfa()
+        self.nfa_u = self._build_u_nfa()
+        self.nfa_h = self._build_h_nfa()
+    
+    def _build_au_nfa(self) -> NFA:
+        """Detect 'au' (ayo→au obfuscation). Examples: kau, pau, tau."""
+        nfa = NFA()
+        nfa.add_state("START")
+        nfa.add_state("MIDDLE")
+        nfa.add_state("A_FOUND")
+        nfa.add_state("AU_FOUND", is_accepting=True)
         
-        # Build multi-word phrase paths (includes spaces)
-        for phrase in self.multi_abbrevs:
-            prev_state = "START"
-            phrase_id = phrase.replace(self.space, "_")
-            
-            for idx, char in enumerate(phrase):
-                new_state = f"PHRASE_{phrase_id}_CH{idx}"
-                is_accepting = (idx == len(phrase) - 1)
-                nfa.add_state(new_state, is_accepting=is_accepting)
-                nfa.add_transition(prev_state, char, new_state)
-                prev_state = new_state
+        nfa.set_initial_state("START")
+        
+        nfa.add_transition("START", self.alphabet, "MIDDLE")
+        nfa.add_transition("START", "a", "A_FOUND")
+
+        nfa.add_transition("MIDDLE", self.alphabet, "MIDDLE")
+        nfa.add_transition("MIDDLE", "a", "A_FOUND")
+
+        nfa.add_transition("A_FOUND", "u", "AU_FOUND")
+        nfa.add_transition("AU_FOUND", self.alphabet, "AU_FOUND")
         
         return nfa
     
-    def detect_single(self, token: str) -> bool:
-        """Detect single-word netspeak (with punctuation stripping)."""
-        cleaned = token.lower().strip('.,!?;:()[]{}"\'-')
-        return self.nfa.matches(cleaned)
+    def _build_f_nfa(self) -> NFA:
+        """Detect 'ph'→'f' pattern. Examples: fone, foto."""
+        nfa = NFA()
+        nfa.add_state("START")
+        nfa.add_state("BEFORE_F")
+        nfa.add_state("F_FOUND", is_accepting=True)
+        nfa.set_initial_state("START")
+        
+        nfa.add_transition("START", self.alphabet, "BEFORE_F")
+        nfa.add_transition("START", "f", "F_FOUND")
+
+        nfa.add_transition("BEFORE_F", self.alphabet, "BEFORE_F")
+        nfa.add_transition("BEFORE_F", "f", "F_FOUND")
+
+        nfa.add_transition("F_FOUND", self.alphabet, "F_FOUND")
+        
+        return nfa
     
-    def detect_multi(self, text: str) -> bool:
-        """Detect multi-word phrases (preserves spaces)."""
-        return self.nfa.matches(text.lower())
+    def _build_d_nfa(self) -> NFA:
+        """Detect 'th'→'d' pattern. Examples: dis, dat."""
+        nfa = NFA()
+        nfa.add_state("START")
+        nfa.add_state("D_FOUND")
+        nfa.add_state("D_VOWEL", is_accepting=True)
+
+        nfa.set_initial_state("START")
+        nfa.add_transition("START", "d", "D_FOUND")
     
-    def detect(self, token: str, is_multi: bool = False) -> bool:
-        """Wrapper detection method."""
-        return self.detect_multi(token) if is_multi else self.detect_single(token)
+        nfa.add_transition("D_FOUND", self.vowels, "D_VOWEL")
+        nfa.add_transition("D_VOWEL", self.alphabet, "D_VOWEL")
+        
+        return nfa
+    
+    def _build_u_nfa(self) -> NFA:
+        """Detect 'oo'→'u' pattern. Examples: fud, gud."""
+        nfa = NFA()
+        nfa.add_state("START")
+        nfa.add_state("BEFORE_U")
+        nfa.add_state("U_FOUND")
+        nfa.add_state("U_CONSONANT", is_accepting=True)
+        nfa.set_initial_state("START")
+        
+        nfa.add_transition("START", self.consonants, "BEFORE_U")
+        nfa.add_transition("BEFORE_U", self.consonants, "BEFORE_U")
+        nfa.add_transition("BEFORE_U", "u", "U_FOUND")
+        nfa.add_transition("U_FOUND", self.consonants, "U_CONSONANT")
+        nfa.add_transition("U_CONSONANT", self.alphabet, "U_CONSONANT")
+        
+        return nfa
+    
+    def _build_h_nfa(self) -> NFA:
+        """Detect trailing 'h'. Examples: gandah, ayh."""
+        nfa = NFA()
+        nfa.add_state("START")
+        nfa.add_state("MIDDLE")
+        nfa.add_state("VOWEL_BEFORE_H")
+        nfa.add_state("TRAILING_H", is_accepting=True)
+        nfa.set_initial_state("START")
+        
+        nfa.add_transition("START", self.alphabet, "MIDDLE")
+        nfa.add_transition("MIDDLE", self.alphabet, "MIDDLE")
+        nfa.add_transition("MIDDLE", self.vowels, "VOWEL_BEFORE_H")
+        nfa.add_transition("VOWEL_BEFORE_H", self.vowels, "VOWEL_BEFORE_H")
+        nfa.add_transition("VOWEL_BEFORE_H", "h", "TRAILING_H")
+        
+        return nfa
+    
+    def is_accepted(self, token: str) -> dict:
+        """Check all phonetic patterns."""
+        patterns = {
+            'au': self.nfa_au.is_accepted(token),
+            'f': self.nfa_f.is_accepted(token),
+            'd': self.nfa_d.is_accepted(token),
+            'u': self.nfa_u.is_accepted(token),
+            'h': self.nfa_h.is_accepted(token)
+        }
+        #print(f"[DEBUG PHONETIC] Testing token='{token}', letters_only='{token}', patterns={patterns}")
+        return {'has_phonetic': any(patterns.values()), 'patterns': patterns}
 
 
 class DetectionService:
-    """
-    Main detection automata using NFAs for obfuscation pattern detection.
-    
-    Handles:
-    - VowelOmissionDetector: txt, plz, thx
-    - CharDuplicationDetector: hellooo, yesss
-    - LeetspeakDetector: h3ll0, p4ssw0rd
-    - MorphologyDetector: Filipino affixes (nag-, -um-, -in)
-    - netspeakDetector: u, ty, lol, omg
-    
-    Returns early if word is already valid (in dictionaries).
-    Only detects obfuscation patterns for invalid words.
-    """
+    """Main detection service using NFAs."""
     
     def __init__(self, dictionaries: Dict[str, Set[str]] = None):
-        """
-        Args:
-            dictionaries: Dict with 'primary', 'secondary', 'tertiary' word sets
-        """
         try:
             load_and_cache_dictionaries()
         except Exception as e:
@@ -490,131 +421,71 @@ class DetectionService:
         self.tertiary_dict = dictionaries.get('tertiary', set()) if dictionaries else set()
         
         leet_data = cached_dictionaries.get('leetspeak_map')
-        abbrev_data = cached_dictionaries.get('netspeak_patterns')
-        morph_data = cached_dictionaries.get('morphology_patterns')
+        netspeak_data = cached_dictionaries.get('netspeak_patterns')
         
         self.vowel_omission = VowelOmissionDetector()
         self.char_duplication = CharDuplicationDetector()
         self.leetspeak = LeetspeakDetector(leet_data.data if leet_data else {})
-        self.morphology = MorphologyDetector(morph_data.data if morph_data else {})
-        self.netspeak = netspeakDetector(abbrev_data.data if abbrev_data else {})
-    
+        self.symbol_separation = SymbolSeparationDetector()
+        self.netspeak = NetspeakDetector(netspeak_data.data if netspeak_data else {})
+        self.phonetic = PhoneticDetector()
+
     def _is_valid_word(self, word: str) -> bool:
-        """Check if word exists in any dictionary."""
-        return (
-            word in self.primary_dict or
-            word in self.secondary_dict or
-            word in self.tertiary_dict
-        )
-    
+        """Check if word exists in dictionaries."""
+        return word in (self.primary_dict | self.secondary_dict | self.tertiary_dict)
     
     def _calculate_confidence(self, signals: Dict[str, bool]) -> float:
-        """
-        Calculate confidence score based on detected signals.
-        
-        Weights by specificity:
-        - netspeak: 0.30 (high - exact matches)
-        - Leetspeak: 0.25 (high - obvious patterns)
-        - Char duplication: 0.20 (medium-high)
-        - Vowel omission: 0.15 (medium)
-        - Morphology: 0.10 (low - can be legitimate)
-        """
+        """Calculate confidence score based on signals."""
         weights = {
             'netspeak': 0.30,
+            'phonetic': 0.20,
             'leetspeak': 0.25,
             'char_duplication': 0.20,
             'vowel_omission': 0.15,
-            'morphology': 0.10
+            'symbol_separation': 0.10
         }
-        
-        total_confidence = sum(
-            weights.get(signal_type, 0.1)
-            for signal_type, detected in signals.items()
-            if detected
-        )
-        
-        return min(total_confidence, 1.0)
+        return min(sum(weights.get(s, 0.1) for s, d in signals.items() if d), 1.0)
 
     def analyze(self, text: str, language: str = 'unknown') -> Dict:
-        """
-        Analyze text for obfuscation patterns.
-        
-        Returns early if word is already valid (not obfuscated).
-        Only detects patterns if word is NOT in dictionary.
-        
-        Args:
-            text: Input text to analyze
-            language: Language hint (default: 'unknown')
-            
-        Returns:
-            Dictionary with detection results and confidence scores
-        """
+        """Analyze text for obfuscation patterns."""
         if not text or not text.strip():
-            return {
-                'isObfuscated': False,
-                'confidence': 0.0,
-                'patterns': [],
-                'detected_signals': {
-                    'vowel_omission': False,
-                    'char_duplication': False,
-                    'leetspeak': False,
-                    'morphology': False,
-                    'netspeak': False
-                }
-            }
+            return self._empty_result()
         
         text_lower = text.lower()
         
-        # STEP 1: If already a valid word, no obfuscation
         if self._is_valid_word(text_lower):
             return {
                 'isObfuscated': False,
+                'status': 'valid',
                 'confidence': 0.0,
                 'patterns': [],
-                'detected_signals': {
-                    'vowel_omission': False,
-                    'char_duplication': False,
-                    'leetspeak': False,
-                    'morphology': False,
-                    'netspeak': False
-                }
+                'detected_signals': {k: False for k in ['vowel_omission', 'char_duplication', 
+                                                        'leetspeak', 'symbol_separation', 'netspeak', 'phonetic']}
             }
         
-        # STEP 2: Only if invalid, check for obfuscation patterns
+        
         try:
             tokens = word_tokenize(normalize_input(text_lower))
-            
             if not tokens:
-                return {
-                    'isObfuscated': False,
-                    'confidence': 0.0,
-                    'patterns': [],
-                    'detected_signals': {
-                        'vowel_omission': False,
-                        'char_duplication': False,
-                        'leetspeak': False,
-                        'morphology': False,
-                        'netspeak': False
-                    }
-                }
+                return self._empty_result()
             
-            # Check multi-token netspeaks (with spaces)
-            has_multi_abbrev = self.netspeak.detect_multi(text_lower)
-            
-            # Detect all obfuscation patterns
             signals = {
-                'vowel_omission': any(self.vowel_omission.detect(t) for t in tokens),
-                'char_duplication': any(self.char_duplication.detect(t) for t in tokens),
-                'leetspeak': any(self.leetspeak.detect(t) for t in tokens),
-                'morphology': any(self.morphology.detect(t) for t in tokens),
-                'netspeak': has_multi_abbrev or any(self.netspeak.detect_single(t) for t in tokens)
+                'vowel_omission': any(self.vowel_omission.is_accepted(t) for t in tokens),
+                'char_duplication': any(self.char_duplication.is_accepted(t) for t in tokens),
+                'leetspeak': any(self.leetspeak.is_accepted(t) for t in tokens),
+                'symbol_separation': any(self.symbol_separation.is_accepted(t) for t in tokens),
+                'netspeak': any(self.netspeak.is_accepted(t) for t in tokens),
+                'phonetic': any(self.phonetic.is_accepted(t)['has_phonetic'] for t in tokens)
             }
             
+
             is_obfuscated = any(signals.values())
             confidence = self._calculate_confidence(signals) if is_obfuscated else 0.0
-            
+            print(f"[DEBUG] Token: '{text}', Signals: {signals}")
+
             return {
                 'isObfuscated': is_obfuscated,
+                'status': 'obfuscated' if is_obfuscated else 'unknown',
                 'confidence': confidence,
                 'patterns': ['taglish_obfuscation'] if is_obfuscated else [],
                 'detected_signals': signals
@@ -622,15 +493,15 @@ class DetectionService:
         
         except Exception as e:
             print(f"[ERROR] Detection failed: {e}")
-            return {
-                'isObfuscated': False,
-                'confidence': 0.0,
-                'patterns': [],
-                'detected_signals': {
-                    'vowel_omission': False,
-                    'char_duplication': False,
-                    'leetspeak': False,
-                    'morphology': False,
-                    'netspeak': False
-                }
-            }
+            return self._empty_result()
+    
+    def _empty_result(self) -> Dict:
+        """Return empty/error result."""
+        return {
+            'isObfuscated': False,
+            'status': 'empty',
+            'confidence': 0.0,
+            'patterns': [],
+            'detected_signals': {k: False for k in ['vowel_omission', 'char_duplication', 
+                                                    'leetspeak', 'symbol_separation', 'netspeak', 'phonetic']}
+        }

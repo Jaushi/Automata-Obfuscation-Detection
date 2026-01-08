@@ -2,7 +2,7 @@ import json
 import logging
 import urllib.request
 from typing import Set
-from ..models import NetspeakPatterns, LeetspeakMap, MorphologyPatterns  
+from ..models import NetspeakPatterns, LeetspeakMap
 import os
 
 logging.basicConfig(level=logging.INFO)
@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 DICTIONARY_FILES = {
     'netspeak_patterns': 'app/dictionaries/netspeak_patterns.json',
     'leetspeak_map': 'app/dictionaries/leetspeak_map.json',
-    'morphology_patterns': 'app/dictionaries/morphology_patterns.json',
+    #'morphology_patterns': 'app/dictionaries/morphology_patterns.json',
     'english_words': 'app/dictionaries/english_words.json'
 }
 
@@ -22,7 +22,7 @@ def load_and_cache_dictionaries():
     model_classes = {
         'netspeak_patterns': NetspeakPatterns,
         'leetspeak_map': LeetspeakMap,
-        'morphology_patterns': MorphologyPatterns
+        #'morphology_patterns': MorphologyPatterns
     }
     for name, file_path in DICTIONARY_FILES.items():
         if name == 'english_words':

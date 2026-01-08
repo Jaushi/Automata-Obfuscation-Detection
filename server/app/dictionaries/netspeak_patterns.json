@@ -9,7 +9,7 @@
             "one of my followers": ["oomf"],
             "i don't know": ["idk"],
             "right now": ["right now", "ryt now", "rn"],
-            "are you there?": ["ayt"],
+            "are you there": ["ayt"],
             "as soon as possible": ["asap"],
             "boyfriend": ["bf"],
             "best friends forever": ["bff"],
@@ -54,7 +54,7 @@
 
         },
         "filipino_shortcuts": {
-            "tayo": ["tau", "tayoo", "tyo"],
+            "tayo": ["tayoo", "tyo", "tau"],
             "mo": ["mue", "m"],
             "ayaw ko": ["auq", "ayk", "ayuko", "ayoq", "ayoko", "yoko", "yoq", "yaw ko", "yawq", "yawko"],
             "na": ["n"],
@@ -71,10 +71,12 @@
             "naman": ["namn", "nmn", "nman"],
             "saan": ["san"],
             "later": ["l8tr", "latur", "laturr", "l8r"],
-
+            "sa": ["s4", "s"],
+            "kumusta": ["kumsta", "kums7a", "kums7@", "kmst", "kmsta"],
             "kuya": ["kyah", "kuyah", "kuys"],
             "ako": ["aq", "aqoh", "akoh", "aku", "ak0", "aqouh"],
             "ikaw": ["kaw", "ikw"],
+            "makakarating": ["mkkrting", "mkrting", "mkkrtng"],
             "siya": ["cya", "sia", "sha", "sya"],
             "kami": ["kme", "km1"],
             "kayo": ["kyo", "kyu"],
@@ -132,6 +134,7 @@
             "low battery": ["lowbat", "low-bat", "lobat"],
             "tsismosa": ["marites"],
             "anong nangyari": ["anyare", "nyare"],
+            "nangyari": ["nyare", "nangyare"],
             "alam na ito": ["alam na this"],
             "ganoon": ["ganern", "ganun"],
             "ganyan": ["ganyn", "ganiyan"],
@@ -139,6 +142,7 @@
             "yan": ["yn"],
             "tama": ["korique"],
             "pa-mine": ["pa mine", "pamine"],
+            "diyan": ["jan", "dyan"],
             "panloloko": ["budol"],
             "mayor": ["yorme"],
             "lugi": ["eguls", "luge", "egul"],
@@ -181,7 +185,7 @@
             "gago": ["gagu", "gaago", "g@go", "g4go", "gahgo", "g@g0"],
             "ulol": ["ulul", "u1ol", "oolol", "uhlol"],
             "tarantado": ["tarantadu", "trntdo", "t@rantado", "tarant@do", "tarantadoh"],
-            "bobo": ["b0bo", "b0b0", "bubu", "bob0", "vovo", "v0v0"],
+            "bobo": ["b0bo", "b0b0", "bubu", "bob0", "vovo", "v0v0", "bbo"],
             "inutil": ["inutel", "inut1l", "invt1l"],
             "walang hiya": ["walanghiya", "wlanghiya", "wlnghya", "walangya"],
             "hayop": ["hayup", "haayop", "h@yop", "hay0p", "hayuf", "hayp"],
@@ -218,7 +222,6 @@
             "low battery": ["lowbat", "low-bat", "lowbatt"],
             "boss": ["ssob", "bossss", "bosz"],
             "miss": ["misz", "ms"],
-            "sir": ["sir", "ser"],
             "madam": ["madam", "maam"],
             "sir, maam": ["sirmam"],
             "hi": ["hi", "hiii", "hiiii"],
@@ -276,6 +279,7 @@
             "coquette": ["koket"],
             "I just burst out laughing": ["ijbol"],
             "mother": ["mader", "maderr"],
+            "sir": ["ser", "s3r", "sah", "sahh"],
             "thoughts": ["tots"],
             "thought": ["tot"],
             "text": ["txt", "teks"],
@@ -287,11 +291,12 @@
             "help": ["hlp"],
             "are": ["r"],
             "forever": ["frvr", "f0rever", "4ever", "f0r3vr"],
-
+            "baby": ["bebe", "beybi", "bb"],
             "fuck": ["fvck", "fck", "f*ck"],
             "fuck you": ["fuck u", "fck u", "pakyu"],
             "great": ["gr8"],
-            "asshole": ["a$$hole"]
+            "asshole": ["a$$hole"],
+            "work": ["wrk", "wurk"]
 
         }   
     }

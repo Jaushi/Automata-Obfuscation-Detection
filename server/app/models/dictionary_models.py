@@ -17,7 +17,8 @@ class NetspeakPatterns(DictionaryModel):
 @dataclass
 class LeetspeakMap(DictionaryModel):
     name: str = "leetspeak_map"
-
+""""
 @dataclass
 class MorphologyPatterns(DictionaryModel):
     name: str = "morphology_patterns"
+"""
