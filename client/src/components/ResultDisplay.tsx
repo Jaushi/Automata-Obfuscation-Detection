@@ -118,7 +118,13 @@ export default function ResultDisplay({ result }: ResultDisplayProps) {
                         d="M13 7l5 5m0 0l-5 5m5-5H6"
                       />
                     </svg>
-                    <span className="px-2.5 py-1 text-sm rounded border text-primary" style={{ backgroundColor: 'rgba(147, 51, 234, 0.1)', borderColor: 'rgba(147, 51, 234, 0.3)' }}>
+                    <span
+                      className="px-2.5 py-1 text-sm rounded border text-primary"
+                      style={{
+                        backgroundColor: "rgba(147, 51, 234, 0.1)",
+                        borderColor: "rgba(147, 51, 234, 0.3)",
+                      }}
+                    >
                       {match.match}
                     </span>
                   </div>
