@@ -105,7 +105,7 @@ class VowelOmissionDetector:
         nfa.add_state("START")
         nfa.add_state("C1")
         nfa.add_state("C2", is_accepting=True)
-        nfa.add_state("C3_PLUS", is_accepting=True)
+
         nfa.set_initial_state("START")
         
         nfa.add_transition("START", self.vowels, "START")
@@ -114,11 +114,8 @@ class VowelOmissionDetector:
         nfa.add_transition("C1", self.consonants, "C2")
         nfa.add_transition("C1", self.vowels, "START")
 
-        nfa.add_transition("C2", self.consonants, "C3_PLUS")
-        nfa.add_transition("C2", self.vowels, "START")
-        
-        nfa.add_transition("C3_PLUS", self.consonants, "C3_PLUS")
-        nfa.add_transition("C3_PLUS", self.vowels, "C3_PLUS") # absorbing accepting state
+        nfa.add_transition("C2", self.consonants, "C2")
+        nfa.add_transition("C2", self.vowels, "START") # absorbing accepting state
         
         return nfa
     
@@ -267,7 +264,7 @@ class NetspeakDetector:
                     elif variants:
                         terms.add(str(variants))
         
-        return {t.strip() for t in terms if " " not in t and 1 <= len(t) <= 6}
+        return {t.strip() for t in terms}
     
     def _build(self) -> NFA:
         """Build NFA for single-word netspeak detection."""

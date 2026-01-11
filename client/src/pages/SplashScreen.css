@@ -1,0 +1,110 @@
+
+.splash-container {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #6a0dad, #9b5de5, #cdb4db);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 9999;
+  animation: fadeOut 0.8s ease forwards;
+  animation-delay: 2.4s;
+}
+
+.splash-logo {
+  width: 360px;
+  z-index: 2;
+  animation:
+    pulse 2s ease-in-out infinite,
+    logoExit 0.8s ease forwards;
+  animation-delay:
+    0s,
+    2.2s;
+}
+
+
+.floating-word {
+  position: absolute;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  animation: float 6s ease-in-out infinite;
+  user-select: none;
+}
+
+.splash-tagline {
+  position: absolute;
+  bottom: 110px;
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  z-index: 2;
+  animation: fadeUp 1.2s ease forwards;
+  animation-delay: 0.8s;
+  opacity: 0;
+}
+
+.group-credit {
+  position: absolute;
+  bottom: 70px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 2;
+  animation: fadeUp 1.2s ease forwards;
+  animation-delay: 1.2s;
+  opacity: 0;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes logoExit {
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateY(-30px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0.2;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    pointer-events: none;
+  }
+}

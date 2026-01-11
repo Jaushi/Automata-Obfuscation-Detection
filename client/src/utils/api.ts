@@ -61,7 +61,7 @@ export async function analyzeText(text: string): Promise<AnalysisResult> {
     fuzzy_matches: fuzzy_matches || [],
     character_count: data.original.length,
   };
-
+}
 
 export async function detectObfuscation(text: string) {
   const response = await fetch(`${API_BASE_URL}/detect`, {
