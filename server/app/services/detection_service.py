@@ -105,7 +105,7 @@ class VowelOmissionDetector:
         nfa.add_state("START")
         nfa.add_state("C1")
         nfa.add_state("C2", is_accepting=True)
-        nfa.add_state("C3_PLUS", is_accepting=True)
+
         nfa.set_initial_state("START")
         
         nfa.add_transition("START", self.vowels, "START")
@@ -113,13 +113,10 @@ class VowelOmissionDetector:
 
         nfa.add_transition("C1", self.consonants, "C2")
         nfa.add_transition("C1", self.vowels, "START")
+        
+        nfa.add_transition("C2", self.consonants, "C2")
+        nfa.add_transition("C2", self.vowels, "C2") # absorbing accepting state
 
-        nfa.add_transition("C2", self.consonants, "C3_PLUS")
-        nfa.add_transition("C2", self.vowels, "START")
-        
-        nfa.add_transition("C3_PLUS", self.consonants, "C3_PLUS")
-        nfa.add_transition("C3_PLUS", self.vowels, "C3_PLUS") # absorbing accepting state
-        
         return nfa
     
     def is_accepted(self, token: str) -> bool:
@@ -267,7 +264,7 @@ class NetspeakDetector:
                     elif variants:
                         terms.add(str(variants))
         
-        return {t.strip() for t in terms if " " not in t and 1 <= len(t) <= 6}
+        return {t.strip() for t in terms}
     
     def _build(self) -> NFA:
         """Build NFA for single-word netspeak detection."""
@@ -474,14 +471,14 @@ class DetectionService:
                 'char_duplication': any(self.char_duplication.is_accepted(t) for t in tokens),
                 'leetspeak': any(self.leetspeak.is_accepted(t) for t in tokens),
                 'symbol_separation': any(self.symbol_separation.is_accepted(t) for t in tokens),
-                'netspeak': any(self.netspeak.is_accepted(t) for t in tokens),
+                'netspeak': all(self.netspeak.is_accepted(t) for t in tokens) if len(tokens) > 1 else any(self.netspeak.is_accepted(t) for t in tokens),
                 'phonetic': any(self.phonetic.is_accepted(t)['has_phonetic'] for t in tokens)
             }
             
 
             is_obfuscated = any(signals.values())
             confidence = self._calculate_confidence(signals) if is_obfuscated else 0.0
-            print(f"[DEBUG] Token: '{text}', Signals: {signals}")
+            print(f"[DEBUG] Text: '{text}', Tokens: {tokens}, Signals: {signals}")
 
             return {
                 'isObfuscated': is_obfuscated,

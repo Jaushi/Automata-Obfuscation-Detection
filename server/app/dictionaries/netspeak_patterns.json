@@ -54,7 +54,7 @@
 
         },
         "filipino_shortcuts": {
-            "tayo": ["tayoo", "tyo", "tau"],
+            "tayo": ["tayoo", "tyo"],
             "mo": ["mue", "m"],
             "ayaw ko": ["auq", "ayk", "ayuko", "ayoq", "ayoko", "yoko", "yoq", "yaw ko", "yawq", "yawko"],
             "na": ["n"],

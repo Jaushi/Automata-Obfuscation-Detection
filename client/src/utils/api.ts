@@ -11,6 +11,7 @@ export interface AnalysisResponse {
   confidence: number;
   obfuscation_types: string[];
   fuzzy_matches: Array<{ original: string; match: string; score: number }>;
+  transformations?: Array<{ original: string; corrected: string }>;
   status: string;
   error?: string;
 }
@@ -18,7 +19,7 @@ export interface AnalysisResponse {
 export interface AnalysisResult {
   original_text: string;
   detected_obfuscation: boolean;
-  status: string
+  status: string;
   obfuscation_percentage: number;
   deciphered_text: string;
   fuzzy_matches: Array<{ original: string; match: string; score: number }>;
@@ -42,9 +43,11 @@ export async function analyzeText(text: string): Promise<AnalysisResult> {
   }
 
   const data: AnalysisResponse = await response.json();
-  // Prefer fuzzy_matches if present, else map transformations for backward compatibility
-  let fuzzy_matches = data.fuzzy_matches;
-  if (!fuzzy_matches && data.transformations) {
+  
+  // Use fuzzy_matches from API, or build from transformations if needed
+  let fuzzy_matches = data.fuzzy_matches || [];
+  
+  if (fuzzy_matches.length === 0 && data.transformations) {
     fuzzy_matches = data.transformations.map(t => ({
       original: t.original,
       match: t.corrected,
@@ -58,10 +61,10 @@ export async function analyzeText(text: string): Promise<AnalysisResult> {
     status: data.status || 'unknown',
     obfuscation_percentage: data.confidence * 100,
     deciphered_text: data.deobfuscated,
-    fuzzy_matches: fuzzy_matches || [],
+    fuzzy_matches,
     character_count: data.original.length,
   };
-
+}
 
 export async function detectObfuscation(text: string) {
   const response = await fetch(`${API_BASE_URL}/detect`, {

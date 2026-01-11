@@ -1,4 +1,4 @@
-from .dictionary_service import cached_dictionaries, get_filipino_words, get_english_words
+from .dictionary_service import cached_dictionaries, get_filipino_words, get_english_words, load_and_cache_dictionaries
 from .fuzzy_matching_service import FuzzyMatcher
 import re
 from itertools import product
@@ -12,6 +12,12 @@ class DeobfuscationService:
         
         # Load cached data
         self._load_cached_data()
+        
+        # Ensure dictionaries are loaded
+        try:
+            load_and_cache_dictionaries()
+        except Exception as e:
+            print(f"[WARNING] Dictionary loading failed: {e}")
         
         # Build lookup maps
         self._build_leet_map()
@@ -222,10 +228,15 @@ class DeobfuscationService:
             variations.add(re.sub(r'([bcdfghjklmnpqrstvwxyz])au', r'\1ayo', result))
             variations.add(re.sub(r'([bcdfghjklmnpqrstvwxyz])au', r'\1yo', result))
         
-        # Return first valid match or original
-        for variant in sorted(variations, key=len):
+        # Return first valid match, prioritizing non-original variants
+        original_token = token.lower()
+        # Check non-original variants first
+        for variant in sorted([v for v in variations if v != original_token], key=len):
             if self._is_valid_word(variant):
                 return variant
+        # Fall back to original if it's valid
+        if self._is_valid_word(original_token):
+            return original_token
         
         return token
     
@@ -244,8 +255,15 @@ class DeobfuscationService:
         leading_punctuation, core_word, trailing_punctuation = match.groups()
         core_lower = core_word.lower()
         
-        # Skip valid words
-        if self._is_english_word(core_lower) or self._is_valid_word(core_lower):
+        # Skip valid words unless they have phonetic signals
+        phonetic_signal = signals.get('phonetic')
+        has_phonetic = (
+            phonetic_signal.get('has_phonetic', False)
+            if isinstance(phonetic_signal, dict)
+            else phonetic_signal
+        )
+        
+        if (self._is_english_word(core_lower) or self._is_valid_word(core_lower)) and not has_phonetic:
             return token
         
         transformed = core_lower

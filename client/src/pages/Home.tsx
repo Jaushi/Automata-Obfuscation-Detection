@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import SplashScreen from "./SplashScreen";
 import TextInput from '../components/TextInput';
 import ResultDisplay from '../components/ResultDisplay';
 import { analyzeText } from '../utils/api';
-import logo from '../assets/auto-decode-logo.png';
+import logo from "../assets/auto-decode-logo.png";
 
 interface AnalysisResult {
   original_text: string;
@@ -24,6 +25,11 @@ function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showSplash, setShowSplash] = useState(true);
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
 
   const handleAnalyze = async () => {
     if (!text.trim()) {
@@ -65,7 +71,7 @@ function Home() {
         {/* Header */}
         <div className="mb-10">
           <div className="mb-3 flex justify-center">
-            <img src={logo} alt="Auto Decode Logo" className="h-16" />
+            <img src={logo} alt="Auto Decode Logo" className="h-16 animate-fadeIn" />
           </div>
           <p className="text-center text-sm text-gray-500">
             Decoding Filipino Netspeak: Finite Automata for Taglish Obfuscation Detection
@@ -113,6 +119,46 @@ function Home() {
                   {error}
                 </div>
               )}
+            </div>
+
+            <p className="mt-4 text-xs text-gray-500 text-center"> This system focuses on <strong>detecting Taglish obfuscation patterns</strong>. Deobfuscation outputs are generated through rule-based transformations and may not always represent perfect linguistic reconstruction.</p>
+            
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                Obfuscation Patterns Recognized (Finite Automata-Based)
+              </h3>
+
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-gray-600">
+                <li>
+                  <span className="font-medium text-gray-800">Vowel Omission</span>  
+                  <span className="block text-xs text-gray-500">e.g., <code>kmsta</code>, <code>sndn</code></span>
+                </li>
+
+                <li>
+                  <span className="font-medium text-gray-800">Character Duplication</span>  
+                  <span className="block text-xs text-gray-500">e.g., <code>hellooo</code>, <code>sobrrra</code></span>
+                </li>
+
+                <li>
+                  <span className="font-medium text-gray-800">Leetspeak Substitution</span>  
+                  <span className="block text-xs text-gray-500">e.g., <code>h3ll0</code>, <code>l0v3</code></span>
+                </li>
+
+                <li>
+                  <span className="font-medium text-gray-800">Symbol Separation</span>  
+                  <span className="block text-xs text-gray-500">e.g., <code>k-m-u-s-t-a</code></span>
+                </li>
+
+                <li>
+                  <span className="font-medium text-gray-800">Netspeak & Slang</span>  
+                  <span className="block text-xs text-gray-500">e.g., <code>sanaol</code>, <code>lodi</code></span>
+                </li>
+
+                <li>
+                  <span className="font-medium text-gray-800">Phonetic Variations</span>  
+                  <span className="block text-xs text-gray-500">e.g., <code>fone</code>, <code>gandah</code></span>
+                </li>
+              </ul>
             </div>
 
             {result && (

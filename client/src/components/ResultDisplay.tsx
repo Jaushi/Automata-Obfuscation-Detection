@@ -23,6 +23,12 @@ export default function ResultDisplay({ result }: ResultDisplayProps) {
         Analysis Results
       </h2>
 
+      <p className="disclaimer-text mb-4 text-xs text-gray-500">
+        {" "}
+        Confidence scores reflect the strength of detected obfuscation patterns
+        not semantic correctness or translation accuracy.{" "}
+      </p>
+
       {/* Statistics */}
       <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-200">
         <div className="text-center p-4">
