@@ -74,7 +74,7 @@ function Home() {
             <img src={logo} alt="Auto Decode Logo" className="h-16 animate-fadeIn" />
           </div>
           <p className="text-center text-sm text-gray-500">
-            Decoding Filipino Netspeak: Finite Automata for Taglish Obfuscation Detection
+            Analyzing Filipino Netspeak: Finite Automata for Taglish Obfuscation Detection
           </p>
         </div>
 
@@ -131,7 +131,7 @@ function Home() {
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-gray-600">
                 <li>
                   <span className="font-medium text-gray-800">Vowel Omission</span>  
-                  <span className="block text-xs text-gray-500">e.g., <code>kmsta</code>, <code>sndn</code></span>
+                  <span className="block text-xs text-gray-500">e.g., <code>kmsta</code></span>
                 </li>
 
                 <li>

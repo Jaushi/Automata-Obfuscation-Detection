@@ -60,7 +60,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
         className="splash-logo"
       />
 
-      <h3 className="splash-tagline">Decoding Obfuscated Text with Automata</h3>
+      <h3 className="splash-tagline">Analyzing Filipino Netspeak: Finite Automata for Taglish Obfuscation Detection</h3>
       <p className="group-credit">Group 12 - BSCS 3-1</p>
     </div>
   );

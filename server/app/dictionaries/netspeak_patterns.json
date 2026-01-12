@@ -96,6 +96,7 @@
             "oo": ["ou", "00", "uu", "uo"],
             "hindi": ["hnd", "ndi", "nde"],
             "'di": ["d", "de"],
+            "edi": ["edi", "d", "di"],
             "bakit": ["bkt", "bkit", "bak8"],
             "sige": ["ge", "sge", "cge", "geh"],
             "dito": ["d2", "dto", "d1to", "d1t0", "ditoh"],
