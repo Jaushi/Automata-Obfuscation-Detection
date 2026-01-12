@@ -11,14 +11,10 @@ class AutomatonState:
         self.state_id = state_id
         self.is_accepting = is_accepting
         self.transitions: Dict[str, Set[str]] = {}
-        self.epsilon_transitions: Set[str] = set()
     
     def __repr__(self):
         return f"State({self.state_id}, accepting={self.is_accepting})"
-
-
 class NFA:
-    """Non-Deterministic Finite Automaton with epsilon transitions."""
     
     def __init__(self):
         self.states: Dict[str, AutomatonState] = {}
@@ -46,31 +42,13 @@ class NFA:
         for symbol in symbols:
             self.states[from_state].transitions.setdefault(symbol, set()).add(to_state)
     
-    def add_epsilon_transition(self, from_state: str, to_state: str):
-        """Add epsilon transition (no symbol consumed)."""
-        self.states[from_state].epsilon_transitions.add(to_state)
-    
-    def _get_epsilon_closure(self, state_set: Set[str]) -> Set[str]:
-        """Find all states reachable via epsilon transitions."""
-        stack = list(state_set)
-        closure = set(state_set)
-        
-        while stack:
-            current = stack.pop()
-            for next_state in self.states[current].epsilon_transitions:
-                if next_state not in closure:
-                    closure.add(next_state)
-                    stack.append(next_state)
-        
-        return closure
-    
     def is_accepted(self, text: str) -> bool:
-        """Check if text is accepted by the NFA."""
+        """Check if text is accepted by NFA."""
         if not self.initial_state:
             return False
         
-        # Start with epsilon closure of initial state
-        current_states = self._get_epsilon_closure({self.initial_state})
+        # Start from initial state
+        current_states = {self.initial_state}
         
         # Process each character
         for char in text:
@@ -85,8 +63,7 @@ class NFA:
             if not next_states:
                 return False
             
-            # Apply epsilon closure to next states
-            current_states = self._get_epsilon_closure(next_states)
+            current_states = next_states
         
         # Accept only if we END in an accepting state
         return any(self.states[s].is_accepting for s in current_states)
